@@ -38,12 +38,14 @@
         dependencies = [ sdl-native ];
       };
     in [ sdl2 ];
-    gen = { buildInputs, targetSystem, pkgConfigPrefix ? "/lib/pkgconfig" }: {
-      demo = zicross.lib.buildZig pkgs targetSystem {
+    gen = args@{ buildInputs, targetSystem, pkgConfigPrefix ? "/lib/pkgconfig", ... }: {
+      demo = zicross.lib.buildZig {
+        hostPkgs = pkgs;
+        inherit targetSystem;
+      } ((builtins.removeAttrs args [ "targetSystem" ]) // {
         pname = "zicross_demo_zig";
         version = "0.1.0";
         src = ./.;
-        inherit buildInputs pkgConfigPrefix;
         zigExecutables = [
           {
             name = "zicross_demo_zig";
@@ -51,41 +53,56 @@
             dependencies = zigPackages;
           }
         ];
-        RESOURCES_ZIG = ''
-          pub const data = "${zicross.lib.logo_data}";
-        '';
         postConfigure = ''
-          printenv RESOURCES_ZIG >resources.zig
-          ls -alh
+          cat <<EOF >resources.zig
+          pub const data = "$targetSharePath/logo.txt";
+          EOF
         '';
-      };
+        postInstall = ''
+          mkdir -p $out/share
+          cp ${zicross.lib.logo_data} $out/share/logo.txt
+        '';
+        meta = {
+          maintainers = [ "Felix Krause <contact@flyx.org>" ];
+          description = "Zicross Demo App";
+        };
+      });
     }; 
     nativePackages = gen {
       buildInputs = [ pkgs.SDL2 pkgs.libiconv ];
       targetSystem = system;
     };
-  in rec {
-    packages = nativePackages // {
-      cross = zicross.lib.crossBuild pkgs gen {
-        rpi = {
-          kind = "debian";
-          target = "armv7l-hf-multiplatform";
-          pkgConfigPrefix = "/usr/lib/arm-linux-gnueabihf/pkgconfig";
-          deps = {
-            sdl2 = {
-              path = "pool/main/libs/libsdl2/libsdl2-2.0-0_2.0.14+dfsg2-3_armhf.deb";
-              sha256 = "1z3bcjx225gp6lcbcd7h15cvhjik089y5pgivl2v3kfp61zm9wv4";
-              dev = {
-                path = "pool/main/libs/libsdl2/libsdl2-dev_2.0.14+dfsg2-3_armhf.deb";
-                sha256 = "17d8qms1p7961kl0g7hgmkn0qx9avjnxwlmsvx677z5xb8vchl3y";
-              };
+    crossPackages = zicross.lib.crossBuild pkgs gen {
+      rpi = {
+        kind = "debian";
+        target = "armv7l-hf-multiplatform";
+        pkgConfigPrefix = "/usr/lib/arm-linux-gnueabihf/pkgconfig";
+        name = "zicross-demo-zig";
+        version = "0.1.0";
+        deps = {
+          sdl2 = {
+            path = "pool/main/libs/libsdl2/libsdl2-2.0-0_2.0.14+dfsg2-3_armhf.deb";
+            sha256 = "1z3bcjx225gp6lcbcd7h15cvhjik089y5pgivl2v3kfp61zm9wv4";
+            dev = {
+              path = "pool/main/libs/libsdl2/libsdl2-dev_2.0.14+dfsg2-3_armhf.deb";
+              sha256 = "17d8qms1p7961kl0g7hgmkn0qx9avjnxwlmsvx677z5xb8vchl3y";
             };
-            libcrypt = {
-              path = "pool/main/libx/libxcrypt/libcrypt1_4.4.18-4_armhf.deb";
-              sha256 = "0mcr0s5dwcj8rlr70sf6n3271pg7h73xk6zb8r7xvhp2fm51fyri";
-            };
+            packageName = "libsdl2-2.0-0";
+            minVersion = "2.0.0";
+          };
+          libcrypt = {
+            path = "pool/main/libx/libxcrypt/libcrypt1_4.4.18-4_armhf.deb";
+            sha256 = "0mcr0s5dwcj8rlr70sf6n3271pg7h73xk6zb8r7xvhp2fm51fyri";
+            packageName = "libcrypt1";
+            minVersion = "1:4.4.18";
           };
         };
+      };
+    };
+  in rec {
+    packages = nativePackages // {
+      rpiDeb = zicross.lib.packageDeb pkgs {
+        src = crossPackages.rpi.demo;
       };
     };
     defaultPackage = packages.demo;
