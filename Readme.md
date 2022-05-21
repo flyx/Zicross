@@ -1,6 +1,6 @@
 <p align="center"><img src="/zicross.svg" alt="zicross logo"/></p>
-<p align="center">Zicross</p>
-<h2 align="center">A <a href="https://nixos.org">Nix</a> toolbox for cross-compilation and foreign packaging, using <a href="https://ziglang.org">Zig</a></h2>
+<h1 align="center">Zicross</h1>
+<h4 align="center">A <a href="https://nixos.org">Nix</a> toolbox for cross-compilation and foreign packaging, using <a href="https://ziglang.org">Zig</a></h4>
 
 **Zicross** allows you to cross-compile your code into binaries for foreign CPU architectures and operating systems.
 It also provides tools for packaging the resulting binary in the target system's format.
