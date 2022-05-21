@@ -74,11 +74,11 @@
         "zig-overlay": "zig-overlay"
       },
       "locked": {
-        "lastModified": 1653162692,
-        "narHash": "sha256-3vKFuOsy4mVyoQMLc4oQMXMoporRwyU3c6Zs5zr8VhI=",
+        "lastModified": 1653167771,
+        "narHash": "sha256-FUAFdnpL/8eELgENaNI4+y/3gwiZFhpQgf/E0uV5KvY=",
         "owner": "flyx",
         "repo": "Zicross",
-        "rev": "e81cdc43d7ec48687ffe5d7fdea40566ba26ce0a",
+        "rev": "a665e94495af285fcaa3c63a3083d0ee6d6f28d7",
         "type": "github"
       },
       "original": {
