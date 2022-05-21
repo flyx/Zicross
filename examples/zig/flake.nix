@@ -38,7 +38,7 @@
         dependencies = [ sdl-native ];
       };
     in [ sdl2 ];
-    gen = args@{ buildInputs, targetSystem, pkgConfigPrefix ? "/lib/pkgconfig", ... }: zicross.lib.buildZig {
+    gen = args@{ buildInputs, targetSystem, ... }: zicross.lib.buildZig {
       hostPkgs = pkgs;
       inherit targetSystem;
     } ((builtins.removeAttrs args [ "targetSystem" ]) // {
