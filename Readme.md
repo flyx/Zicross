@@ -21,6 +21,9 @@ Zicross will fetch all other dependencies automatically via Nix.
 
 ## Documentation
 
+**This documentation is rudimentary and not a tutorial.**
+Consider having a look at the `examples` folder.
+
 Zicross provides three kinds of functions: *Package collectors*, *builders* and *packagers*.
 Package collectors download packages from a foreign package repository (e.g. Debian, MSYS2), make necessary patches to them and supply them as build inputs.
 Builders implement the actual compilation of your code and are as configurable as typical build functions from NixPkgs.
@@ -44,11 +47,17 @@ See the `examples` folder for examples.
 
 Every package collector is a function with the following parameters:
 
-    hostPkgs: pkgGen: {pkgConfigPrefix ? "/lib/pkgconfig", deps ? {}, targetSystem, <others>, ...}: <impl>
+    hostPkgs: pkgGen: {
+      pkgConfigPrefix ? "/lib/pkgconfig",
+      deps ? {},
+      targetSystem,
+      <others>,
+      ...
+    }: <impl>
 
  * `hostPkgs` is a NixPkgs instance for your host system.
  * `pkgGen` is your package generator function, as described above.
- * `pkgConfigPrefix` is the path to `*.pc` files within the install prefix in the packages.
+ * `pkgConfigPrefix` is the path to `*.pc` files within the packages. Defaults to `/lib/pkgconfig` which is valid for NixOS but other system typically use `/usr/lib/pkgconfig` or similar.
  * `deps` is a set of named dependencies, whose format is defined per collector.
  * `targetSystem` is the name of the target system.
  * `<others>` can be additional attributes that are defined per collector.
@@ -121,8 +130,7 @@ Every builder is a function with the following parameters:
 
 The first parameter instantiates the builder for a tuple of host and target system, with the host system given as NixPkgs instance, and the target system given as name.
 
-The second parameter contains standard `mkDerivation` attributes, along with `pkgConfigPrefix` which is the path to the folder containing `*.pc` files inside your packages.
-The given default is valid for Nix packages, but it will often be `/usr/lib/pkgconfig` or something similar in other cases (you should set this in the call to the package collector, where it will be piped through).
+The second parameter contains standard `mkDerivation` attributes, along with `pkgConfigPrefix` (from your call to the package collector, see above).
 
 #### buildZig
 
