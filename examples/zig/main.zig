@@ -5,8 +5,11 @@ const resources = @import("resources.zig");
 var data: [20][40]bool = undefined;
 
 fn loadData() !void {
-  const file =
-    try std.fs.openFileAbsolute(resources.data, .{.read = true, .write = false});
+  const file = if (std.fs.path.isAbsolute(resources.data)) (
+    try std.fs.openFileAbsolute(resources.data, .{.read = true, .write = false})
+  ) else (
+    try std.fs.cwd().openFile(resources.data, .{.read = true, .write = false})
+  );
   defer file.close();
   for (data) |*row| {
     var buffer: [41]u8 = undefined;

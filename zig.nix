@@ -18,5 +18,6 @@
   passthru.systemName = {
     "aarch64-darwin" = "aarch64-macos";
     "armv7l-hf-multiplatform" = "arm-linux-gnueabihf";
+    "x86_64-windows" = "x86_64-windows-gnu";
   };
 })
