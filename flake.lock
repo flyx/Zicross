@@ -33,20 +33,20 @@
     },
     "root": {
       "inputs": {
-        "zig-overlay": "zig-overlay"
+        "zig-flake": "zig-flake"
       }
     },
-    "zig-overlay": {
+    "zig-flake": {
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1652229843,
-        "narHash": "sha256-uFxRKb8HK3+LWZZ7FjIfw9hU46X4qqjy5ier7HsWzCE=",
+        "lastModified": 1653180168,
+        "narHash": "sha256-FRV/JM1N8B7MTaSrVCP5dNN+m5oxq1YwTu1/f5cOKic=",
         "owner": "arqv",
         "repo": "zig-overlay",
-        "rev": "321e3d87e8fafde01321a48d089f944f83c291ec",
+        "rev": "3bb47ae2991f3cb441d20a129f2936c460bf242a",
         "type": "github"
       },
       "original": {

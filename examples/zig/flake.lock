@@ -71,14 +71,14 @@
     },
     "zicross": {
       "inputs": {
-        "zig-overlay": "zig-overlay"
+        "zig-flake": "zig-flake"
       },
       "locked": {
-        "lastModified": 1653167771,
-        "narHash": "sha256-FUAFdnpL/8eELgENaNI4+y/3gwiZFhpQgf/E0uV5KvY=",
+        "lastModified": 1653480993,
+        "narHash": "sha256-3vslOLPyJ5vfsgyAs7lty4aPHtdDgJgmQkc2DmNNDuU=",
         "owner": "flyx",
         "repo": "Zicross",
-        "rev": "a665e94495af285fcaa3c63a3083d0ee6d6f28d7",
+        "rev": "16132ffce6323a7ae367f9b5800b8c486e7604d2",
         "type": "github"
       },
       "original": {
@@ -87,17 +87,17 @@
         "type": "github"
       }
     },
-    "zig-overlay": {
+    "zig-flake": {
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1652229843,
-        "narHash": "sha256-uFxRKb8HK3+LWZZ7FjIfw9hU46X4qqjy5ier7HsWzCE=",
+        "lastModified": 1653180168,
+        "narHash": "sha256-FRV/JM1N8B7MTaSrVCP5dNN+m5oxq1YwTu1/f5cOKic=",
         "owner": "arqv",
         "repo": "zig-overlay",
-        "rev": "321e3d87e8fafde01321a48d089f944f83c291ec",
+        "rev": "3bb47ae2991f3cb441d20a129f2936c460bf242a",
         "type": "github"
       },
       "original": {
