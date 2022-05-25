@@ -29,9 +29,6 @@ Zicross provides two kinds of tools: *Builders* and *Package Translators*.
 *Package Translators* are functions that take a derivation built with a *Builder* and modify it to build a package for a foreign target system.
 *Package Translators* require that the derivation they translate has been built by one of Zicross' *Builders*.
 
-Zicross' tools are largely independent and can be injected via overlays.
-A list of available overlays follows, which assumes you have imported Zicross as `zicross` in your Flake.
-
 The important property of Zicross **Builders** is that they call `mkDerivation` with an argument named `ZIG_TARGET`.
 Translators will take advantage of this by overriding it when cross-compiling.
 
@@ -53,7 +50,8 @@ The following arguments are accepted by every *Package Translator* inside of `ar
 
 ---
 
-The following overlays are currently available:
+Zicross' tools can be injected independently via several overlays to your Nixpkgs instance.
+The following list of overlays assumes you have imported Zicross as `zicross` in your Flake.
 
 ### `zicross.overlays.zig`
 
