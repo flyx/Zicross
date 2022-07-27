@@ -1,4 +1,4 @@
-self: super: {
+final: prev: {
   buildForWindows =
     # the original package to override
     pkg:
@@ -17,15 +17,15 @@ self: super: {
       };
       pkgsFromPacman = name: input: let
         src = fetchMsys input;
-      in super.stdenvNoCC.mkDerivation ((builtins.removeAttrs input [ "tail" "sha256" ]) // {
+      in prev.stdenvNoCC.mkDerivation ((builtins.removeAttrs input [ "tail" "sha256" ]) // {
         name = "msys2-${name}";
         inherit src;
         phases = [ "unpackPhase" "patchPhase" "installPhase" ];
-        nativeBuildInputs = [ super.gnutar super.zstd ];
+        nativeBuildInputs = [ prev.gnutar prev.zstd ];
         unpackPhase = ''
           runHook preUnpack
           mkdir -p upstream
-          ${super.gnutar}/bin/tar -xvpf $src -C upstream \
+          ${prev.gnutar}/bin/tar -xvpf $src -C upstream \
           --exclude .PKGINFO --exclude .INSTALL --exclude .MTREE --exclude .BUILDINFO
           runHook postUnpack
         '';
@@ -33,7 +33,7 @@ self: super: {
           runHook prePatch
           shopt -s globstar
           for pcFile in upstream/**/pkgconfig/*.pc; do
-            ${patch-pkg-config super} $pcFile $out
+            ${patch-pkg-config prev} $pcFile $out
           done
           runHook postPatch
         '';
@@ -46,8 +46,8 @@ self: super: {
       });
     in pkg.overrideAttrs( _: {
       inherit pkgConfigPrefix;
-      ZIG_TARGET = super.zig.systemName.${targetSystem};
-      buildInputs = super.lib.mapAttrsToList pkgsFromPacman deps;
+      ZIG_TARGET = prev.zig.systemName.${targetSystem};
+      buildInputs = prev.lib.mapAttrsToList pkgsFromPacman deps;
       targetSharePath = "../share";
       postInstall = ''
         for item in $buildInputs; do
@@ -67,8 +67,8 @@ self: super: {
     , targetSystem}@args':
     
     let
-      src = self.buildForWindows pkg args';
-    in super.stdenvNoCC.mkDerivation {
+      src = final.buildForWindows pkg args';
+    in prev.stdenvNoCC.mkDerivation {
       name = "${src.name}-win64.zip";
       unpackPhase = ''
         packDir=${src.name}-win64
@@ -76,7 +76,7 @@ self: super: {
         cp -rt $packDir --no-preserve=mode ${src}/*
       '';
       buildPhase = ''
-        ${super.zip}/bin/zip -r $packDir.zip $packDir
+        ${prev.zip}/bin/zip -r $packDir.zip $packDir
       '';
       installPhase = ''
         cp $packDir.zip $out

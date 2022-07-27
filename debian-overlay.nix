@@ -1,4 +1,4 @@
-self: super: {
+final: prev: {
   buildForDebian =
     # the original package to override
     pkg:
@@ -23,20 +23,20 @@ self: super: {
         hasDev = builtins.hasAttr "dev" input;
         srcs = [ (fetchDeb input)] ++
           (if hasDev then [ (fetchDeb input.dev) ] else []);
-      in super.stdenvNoCC.mkDerivation {
+      in prev.stdenvNoCC.mkDerivation {
         name = "dpkg-${name}";
         inherit srcs;
         phases = ["unpackPhase" "patchPhase" "installPhase"];
         unpackPhase = ''
           mkdir -p upstream
-          ${super.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 0} upstream
+          ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 0} upstream
         '' + (if hasDev then ''
-          ${super.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 1} upstream
+          ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 1} upstream
         '' else "");
         patchPhase = ''
           shopt -s globstar
           for pcFile in upstream/**/pkgconfig/*.pc; do
-            ${patch-pkg-config super} $pcFile $out
+            ${patch-pkg-config prev} $pcFile $out
           done
         '';
         installPhase = ''
@@ -49,14 +49,14 @@ self: super: {
       };
     in pkg.overrideAttrs (_: {
       inherit pkgConfigPrefix;
-      ZIG_TARGET = super.zig.systemName.${targetSystem};
-      buildInputs = super.lib.mapAttrsToList pkgFromDebs deps;
+      ZIG_TARGET = prev.zig.systemName.${targetSystem};
+      buildInputs = prev.lib.mapAttrsToList pkgFromDebs deps;
       passthru.deb = {
         Package = name;
         Version = version;
         Architecture = debianArch.${targetSystem};
-        Depends = super.lib.concatStringsSep ", " (
-          super.lib.mapAttrsToList (key: value: "${value.packageName} (>= ${value.minVersion})") deps
+        Depends = prev.lib.concatStringsSep ", " (
+          prev.lib.mapAttrsToList (key: value: "${value.packageName} (>= ${value.minVersion})") deps
         );
       };
       targetSharePath = "/usr/share/${name}";
@@ -78,8 +78,8 @@ self: super: {
     let
       name = src.deb.Package;
       version = src.deb.Version;
-      src = self.buildForDebian pkg args';
-    in super.stdenvNoCC.mkDerivation {
+      src = final.buildForDebian pkg args';
+    in prev.stdenvNoCC.mkDerivation {
       name = "${name}-${version}.deb";
       CONTROL = ''
         Package: ${name}
@@ -88,7 +88,7 @@ self: super: {
         Priority: optional
         Architecture: ${src.deb.Architecture}
         Depends: ${src.deb.Depends}
-        Maintainer: ${super.lib.concatStringsSep ", " src.meta.maintainers}
+        Maintainer: ${prev.lib.concatStringsSep ", " src.meta.maintainers}
         Description: ${src.meta.description}
       '';
       unpackPhase = ''
@@ -104,7 +104,7 @@ self: super: {
         printenv CONTROL > ${name}_${version}/DEBIAN/control
       '';
       buildPhase = ''
-        ${super.dpkg}/bin/dpkg-deb --build ${name}_${version}
+        ${prev.dpkg}/bin/dpkg-deb --build ${name}_${version}
       '';
       installPhase = ''
         cp *.deb $out

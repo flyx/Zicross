@@ -1,8 +1,16 @@
 # provided by the flake
 {zig-flake}:
 
-self: super: {
-  zig = zig-flake.packages.${super.system}."0.9.1".overrideAttrs (old: {
+final: prev: let
+  zig = zig-flake.packages.${prev.system}."0.9.1".overrideAttrs (old: {
+    cc_impl = ''
+      #!${final.bash}/bin/bash
+      ADDITIONAL_FLAGS=
+      if ! [ -z ''${ZIG_TARGET+x} ]; then
+        ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target=$ZIG_TARGET"
+      fi
+      ${builtins.placeholder "out"}/bin/zig cc $ADDITIONAL_FLAGS $@
+    '';
     installPhase = let
       armFeatures = builtins.fetchurl {
         url = "https://sourceware.org/git/?p=glibc.git;"    +
@@ -13,8 +21,10 @@ self: super: {
         sha256 =
           "1g4yb51srrfbd4289yj0vrpzzp2rlxllxgz8q4a5zw1n654wzs5a";
       };
-    in old.installPhase + "\ncp ${armFeatures} " +
-      "$out/lib/libc/glibc/sysdeps/arm/arm-features.h";
+    in old.installPhase + ''
+      cp ${armFeatures} $out/lib/libc/glibc/sysdeps/arm/arm-features.h
+      printenv cc_impl >$out/bin/cc
+    '';
     # mapping from NixOS system names to what zig expects
     passthru.systemName = {
       "aarch64-darwin" = "aarch64-macos";
@@ -22,6 +32,10 @@ self: super: {
       "x86_64-windows" = "x86_64-windows-gnu";
     };
   });
-  buildZig = self.callPackage (import ./buildZig.nix) { };
+  tmpStdenv = prev.overrideCC prev.clangStdenv zig;
+in {
+  inherit zig;
+  zigStdenv = tmpStdenv.override { cc = prev.clangStdenv.cc; };
+  buildZig = final.callPackage (import ./buildZig.nix) { };
 }
 
