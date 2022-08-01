@@ -6,7 +6,7 @@
 , pkgConfigPrefix ? "/lib/pkgconfig"
 # Build inputs in the format of the target system.
 # May be foreign packages, e.g. from Debian.
-, buildInputs
+, buildInputs ? []
 # as specified for mkDerivation
 , nativeBuildInputs ? []
 # buildZig autogenerates a `build.zig` file.
