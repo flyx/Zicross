@@ -45,7 +45,7 @@ let
     code = deps.code + ''
       const ${state.${package.name}} = std.build.Pkg{
         .name = "${package.name}",
-        .path = .{.path = "${package.src}/${package.main}"},
+        .path = .{.path = "${if (builtins.hasAttr "src" package) then "${package.src}/" else ""}${package.main}"},
         .dependencies = &.{
           ${lib.concatStringsSep ",\n" (map (package: state.${package.name}) package.dependencies)}
         }
