@@ -39,7 +39,7 @@
 
 let
   declZigPackage = with builtins; ctx: package: if hasAttr package.name ctx.state then ctx else let
-    deps = foldl' declZigPackage ctx package.dependencies;
+    deps = foldl' declZigPackage ctx (package.dependencies or [ ]);
   in rec {
     state = deps.state // { "${package.name}" = "p${toString (length (attrNames deps.state))}"; };
     code = deps.code + ''
@@ -47,7 +47,7 @@ let
         .name = "${package.name}",
         .path = .{.path = "${if (builtins.hasAttr "src" package) then "${package.src}/" else ""}${package.main}"},
         .dependencies = &.{
-          ${lib.concatStringsSep ",\n" (map (package: state.${package.name}) package.dependencies)}
+          ${lib.concatStringsSep ",\n" (map (package: state.${package.name}) (package.dependencies or [ ]))}
         }
       };
     '';
@@ -129,14 +129,14 @@ in stdenvNoCC.mkDerivation ((
       addPkgConfigLibs(${exec.name});
       ${lib.concatStrings (builtins.map (pkg: ''
         ${exec.name}.addPackage(${fullDeps.state.${pkg.name}});
-      '') exec.dependencies)}
+      '') (exec.dependencies or [ ]))}
       ${exec.name}.install();
     '') zigExecutables)}
     ${lib.concatStrings (builtins.map (test: ''
       const ${test.name} = b.addTest("${test.file}");
       ${lib.concatStrings (builtins.map (pkg: ''
         ${test.name}.addPackage(${fullDeps.state.${pkg.name}});
-      '') test.dependencies)}
+      '') (test.dependencies or [ ]))}
       ${test.name}.setFilter(test_filter);
       ${test.name}.emit_bin = testEmitOption(emit_bin, "${test.name}");
       const ${test.name}_step = b.step("${test.name}", "${test.description or ""}");
