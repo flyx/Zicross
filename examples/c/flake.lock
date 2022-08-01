@@ -17,11 +17,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1658912196,
-        "narHash": "sha256-GTP5XCLPU2Hg2bQC5dVqSBF9ef5C/J6pD4qM09Ba4Gk=",
+        "lastModified": 1659253578,
+        "narHash": "sha256-9xjr2VFCQEpgCKdfZjOhiaLZ/XozLp+Y3UmUn44wYZg=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d9536b9b1e33377fb520e115bc8588d093ed97be",
+        "rev": "ede02b4ccb13557b95058d66146640a2b0bb198f",
         "type": "github"
       },
       "original": {
@@ -74,15 +74,16 @@
         "zig-flake": "zig-flake"
       },
       "locked": {
-        "lastModified": 1658954136,
-        "narHash": "sha256-MT8Y1TECGSffp/u0njWjklP2TTdzM8jQoZjnOQRCQAk=",
+        "lastModified": 1659393427,
+        "narHash": "sha256-MUuXEAqkfMmxZK0hBQVfbFylE5X2LwrCf6vel23K1CE=",
         "owner": "flyx",
         "repo": "Zicross",
-        "rev": "8ca436133014a974210c20d87c6da263ff83b127",
+        "rev": "323cc1b8d13f68e636e69e3210ea4c1f5d9d67ca",
         "type": "github"
       },
       "original": {
         "owner": "flyx",
+        "ref": "zig-for-c",
         "repo": "Zicross",
         "type": "github"
       }

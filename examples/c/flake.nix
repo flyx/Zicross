@@ -1,6 +1,6 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross;
+    zicross.url = github:flyx/Zicross/zig-for-c;
     nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
     utils.url   = github:numtide/flake-utils;
   };
@@ -35,6 +35,7 @@
           EOF
         '';
         preBuild = ''
+          export CFLAGS="$(pkg-config --cflags sdl2)"
           export LDFLAGS="$(pkg-config --libs sdl2)"
         '';
         preInstall = ''
