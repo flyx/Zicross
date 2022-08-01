@@ -25,6 +25,16 @@
 #       dependencies = <list of zig packages>;
 #     }
 , zigExecutables ? []
+# list of tests to run after building.
+# each list item is to have the following structure:
+#
+#     {
+#       name = <valid zig identifier, must not be name of an executable or library>;
+#       description = <string that describes the test>;
+#       file = <string: relative path to zig file containing the test(s)>;
+#       dependencies = <list of zig packages>;
+#     }
+, zigTests ? []
 , ...}@args':
 
 let
@@ -43,14 +53,15 @@ let
     '';
   };
 in stdenvNoCC.mkDerivation ((
-  builtins.removeAttrs args' [ "zigExecutables" "pkgConfigPrefix" "buildZigAdditional" "buildZigAdditionalHeader" ]
+  builtins.removeAttrs args' [ "zigExecutables" "zigTests" "pkgConfigPrefix" "buildZigAdditional" "buildZigAdditionalHeader" ]
 ) // {
   # needed because args' doesn't contain the default values
   inherit buildZigAdditional buildZigAdditionalHeader pkgConfigPrefix;
   nativeBuildInputs = nativeBuildInputs ++ [ pkg-config ];
+  doCheck = builtins.length zigTests > 0;
   configurePhase = let
     fullDeps = builtins.foldl' declZigPackage { state = {}; code = ""; }
-        (lib.lists.flatten (builtins.catAttrs "dependencies" zigExecutables));
+        (lib.lists.flatten (builtins.catAttrs "dependencies" (zigExecutables ++ zigTests)));
   in ''
     targetSharePath=${if builtins.hasAttr "targetSharePath" args' then args'.targetSharePath else "$out/share"}
     runHook preConfigure
@@ -89,10 +100,27 @@ in stdenvNoCC.mkDerivation ((
     mycat >>build.zig <<-EOF
       step.linkLibC();
     }
+    
+    fn testEmitOption(
+      emit_bin: bool,
+      name: []const u8,
+    ) std.build.LibExeObjStep.EmitOption {
+      return if (!emit_bin) std.build.LibExeObjStep.EmitOption.default else
+        std.build.LibExeObjStep.EmitOption{.emit_to = name};
+    }
 
     pub fn build(b: *std.build.Builder) !void {
       const target = b.standardTargetOptions(.{});
       const mode = b.standardReleaseOptions();
+      
+    ${if builtins.length zigTests > 0 then ''
+      const test_filter =
+        b.option([]const u8, "test-filter", "filters tests when testing");
+      const emit_bin = (
+        b.option(bool, "emit_bin", "emit binaries for tests")
+      ) orelse false;
+    '' else ""}
+      
     ${lib.concatStrings (builtins.map (exec: ''
       const ${exec.name} = b.addExecutable("${exec.name}", "${exec.file}");
       ${exec.name}.setTarget(target);
@@ -104,6 +132,16 @@ in stdenvNoCC.mkDerivation ((
       '') exec.dependencies)}
       ${exec.name}.install();
     '') zigExecutables)}
+    ${lib.concatStrings (builtins.map (test: ''
+      const ${test.name} = b.addTest("${test.file}");
+      ${lib.concatStrings (builtins.map (pkg: ''
+        ${test.name}.addPackage(${fullDeps.state.${pkg.name}});
+      '') test.dependencies)}
+      ${test.name}.setFilter(test_filter);
+      ${test.name}.emit_bin = testEmitOption(emit_bin, "${test.name}");
+      const ${test.name}_step = b.step("${test.name}", "${test.description or ""}");
+      ${test.name}_step.dependOn(&${test.name}.step);
+    '') zigTests)}
     EOF
     printenv buildZigAdditional >>build.zig
     echo "}" >>build.zig
@@ -123,6 +161,16 @@ in stdenvNoCC.mkDerivation ((
     export PATH=${pkg-config}/bin:$PATH # so that zig build sees it
     ${zig}/bin/zig build $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
     runHook postBuild
+  '';
+  # don't check when cross-compiling
+  checkPhase = ''
+    if [ -z ''${ZIG_TARGET+x} ]; then
+      runHook preCheck
+    ${lib.concatStrings (builtins.map (test: ''
+      ${zig}/bin/zig build ${test.name} $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
+    '') zigTests)}
+      runHook postCheck
+    fi
   '';
   installPhase = ''
     runHook preInstall
