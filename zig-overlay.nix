@@ -2,13 +2,22 @@
 {zig-flake}:
 
 final: prev: let
-  zig = zig-flake.packages.${prev.system}."0.9.1".overrideAttrs (old: {
+  zig = zig-flake.packages.${prev.system}."0.9.1".overrideAttrs (old: let
+    macos_sysroot = if prev.stdenv.isDarwin then "${final.darwin.apple_sdk.MacOSX-SDK}" else "";
+  in {
     cc_impl = ''
       #!${final.bash}/bin/bash
+      env
       ADDITIONAL_FLAGS=
       if ! [ -z ''${ZIG_TARGET+x} ]; then
         ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target=$ZIG_TARGET"
       fi
+      if ! [ -z ''${NIX_COREFOUNDATION_RPATH+x} ]; then
+        ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -F$NIX_COREFOUNDATION_RPATH"
+        ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -I${macos_sysroot}/usr/include -L${macos_sysroot}/usr/lib -DTARGET_OS_OSX=1 -DTARGET_OS_IPHONE=0"
+      fi
+      export ZIG_LOCAL_CACHE_DIR=$(pwd)/zig-cache
+      export ZIG_GLOBAL_CACHE_DIR=$ZIG_LOCAL_CACHE_DIR
       ${builtins.placeholder "out"}/bin/zig cc $ADDITIONAL_FLAGS $@
     '';
     installPhase = let
@@ -24,6 +33,7 @@ final: prev: let
     in old.installPhase + ''
       cp ${armFeatures} $out/lib/libc/glibc/sysdeps/arm/arm-features.h
       printenv cc_impl >$out/bin/cc
+      chmod a+x $out/bin/cc
     '';
     # mapping from NixOS system names to what zig expects
     passthru.systemName = {
@@ -32,10 +42,9 @@ final: prev: let
       "x86_64-windows" = "x86_64-windows-gnu";
     };
   });
-  tmpStdenv = prev.overrideCC prev.clangStdenv zig;
 in {
   inherit zig;
-  zigStdenv = tmpStdenv.override { cc = prev.clangStdenv.cc; };
+  zigStdenv = prev.overrideCC prev.clangStdenv zig;
   buildZig = final.callPackage (import ./buildZig.nix) { };
 }
 
