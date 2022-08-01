@@ -89,3 +89,9 @@ pub fn main() !void {
     renderer.present();
   }
 }
+
+test "load data" {
+  try loadData();
+  try std.testing.expectEqual(data[0][0], false);
+  try std.testing.expectEqual(data[3][6], true);
+}

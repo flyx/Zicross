@@ -1,7 +1,7 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross;
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-21.11;
+    zicross.url = github:flyx/Zicross/zig-test;
+    nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
     utils.url   = github:numtide/flake-utils;
   };
   outputs = {self, zicross, nixpkgs, utils}:
@@ -59,9 +59,24 @@
             dependencies = zigPackages;
           }
         ];
+        zigTests = [
+          {
+            name = "loadTest";
+            description = "tests loading the logo";
+            file = "main.zig";
+            src = ./.;
+            dependencies = zigPackages;
+          }
+        ];
         postConfigure = ''
           cat <<EOF >resources.zig
           pub const data = "$targetSharePath/logo.txt";
+          EOF
+        '';
+        # use upstream logo file for testing
+        preCheck = ''
+          cat <<EOF >resources.zig
+          pub const data = "${zicross.lib.logo_data}";
           EOF
         '';
         preInstall = ''
