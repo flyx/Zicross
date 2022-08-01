@@ -20,7 +20,7 @@
 # each list item is to have the following structure:
 # 
 #     {
-#       name = <valid zig identifier>;
+#       name = <output name>;
 #       file = <string: relative path to zig file containing `pub fn main`>;
 #       dependencies = <list of zig packages>;
 #     }
@@ -29,7 +29,7 @@
 # each list item is to have the following structure:
 #
 #     {
-#       name = <valid zig identifier, must not be name of an executable or library>;
+#       name = <name the tests can be called with (via `zig build $name`)>;
 #       description = <string that describes the test>;
 #       file = <string: relative path to zig file containing the test(s)>;
 #       dependencies = <list of zig packages>;
@@ -121,26 +121,32 @@ in stdenvNoCC.mkDerivation ((
       ) orelse false;
     '' else ""}
       
-    ${lib.concatStrings (builtins.map (exec: ''
-      const ${exec.name} = b.addExecutable("${exec.name}", "${exec.file}");
-      ${exec.name}.setTarget(target);
-      ${exec.name}.setBuildMode(mode);
-      ${exec.name}.linkage = .dynamic;
-      addPkgConfigLibs(${exec.name});
+    ${lib.concatStrings (lib.imap1 (i: exec: let
+      v = "exec${toString i}";
+    in ''
+      const ${v} = b.addExecutable("${exec.name}", "${exec.file}");
+      ${v}.setTarget(target);
+      ${v}.setBuildMode(mode);
+      ${v}.linkage = .dynamic;
+      ${v}.main_pkg_path = ".";
+      addPkgConfigLibs(${v});
       ${lib.concatStrings (builtins.map (pkg: ''
-        ${exec.name}.addPackage(${fullDeps.state.${pkg.name}});
+        ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (exec.dependencies or [ ]))}
-      ${exec.name}.install();
+      ${v}.install();
     '') zigExecutables)}
-    ${lib.concatStrings (builtins.map (test: ''
-      const ${test.name} = b.addTest("${test.file}");
+    ${lib.concatStrings (lib.imap1 (i: test: let
+      v = "test${toString i}";
+    in ''
+      const ${v} = b.addTest("${test.file}");
       ${lib.concatStrings (builtins.map (pkg: ''
-        ${test.name}.addPackage(${fullDeps.state.${pkg.name}});
+        ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (test.dependencies or [ ]))}
-      ${test.name}.setFilter(test_filter);
-      ${test.name}.emit_bin = testEmitOption(emit_bin, "${test.name}");
-      const ${test.name}_step = b.step("${test.name}", "${test.description or ""}");
-      ${test.name}_step.dependOn(&${test.name}.step);
+      ${v}.setFilter(test_filter);
+      ${v}.emit_bin = testEmitOption(emit_bin, "${test.name}");
+      ${v}.main_pkg_path = ".";
+      const ${v}_step = b.step("${test.name}", "${test.description or ""}");
+      ${v}_step.dependOn(&${v}.step);
     '') zigTests)}
     EOF
     printenv buildZigAdditional >>build.zig
