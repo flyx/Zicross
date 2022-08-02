@@ -10,7 +10,9 @@ final: prev: let
       env
       ADDITIONAL_FLAGS=
       if ! [ -z ''${ZIG_TARGET+x} ]; then
-        ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target=$ZIG_TARGET"
+        ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target $ZIG_TARGET"
+        # don't add the macOS flags when cross-compiling
+        NIX_COREFOUNDATION_RPATH=
       fi
       if ! [ -z ''${NIX_COREFOUNDATION_RPATH+x} ]; then
         ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -F$NIX_COREFOUNDATION_RPATH"
