@@ -141,7 +141,7 @@ in stdenvNoCC.mkDerivation ((
       ${v}.setBuildMode(mode);
       ${v}.linkage = .dynamic;
       ${v}.main_pkg_path = ".";
-      addPkgConfigLibs(${v})
+      addPkgConfigLibs(${v});
       ${lib.concatStrings (builtins.map (pkg: ''
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (ziglib.dependencies or [ ]))}
