@@ -136,7 +136,7 @@ in stdenvNoCC.mkDerivation ((
     ${lib.concatStrings (lib.imap1 (i: ziglib: let
       v = "lib${toString i}";
     in ''
-      const ${v} = b.addLibrary("${ziglib.name}", "${ziglib.file}");
+      const ${v} = b.addSharedLibrary("${ziglib.name}", "${ziglib.file}", .unversioned);
       ${v}.setTarget(target);
       ${v}.setBuildMode(mode);
       ${v}.linkage = .dynamic;
