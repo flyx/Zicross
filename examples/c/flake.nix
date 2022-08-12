@@ -1,6 +1,6 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross/zig-for-c;
+    zicross.url = github:flyx/Zicross;
     nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
     utils.url   = github:numtide/flake-utils;
   };
@@ -19,13 +19,15 @@
         AudioToolbox Carbon Cocoa CoreAudio CoreFoundation CoreHaptics
         ForceFeedback GameController IOKit Metal QuartzCore
     ] else [];
+    
+    pname = "zicross_demo_c";
+    version = "0.1.0";
   in rec {
     packages = rec {
       demo = pkgs.zigStdenv.mkDerivation {
         nativeBuildInputs = [ pkgs.pkg-config ];
         buildInputs = with pkgs; [ SDL2 libiconv ];
-        pname = "zicross_demo_c";
-        version = "0.1.0";
+        inherit pname version;
         makeFlags = [ "DESTDIR=${placeholder "out"}" ];
         targetSharePath="${placeholder "out"}/share";
         src = ./.;
@@ -50,8 +52,8 @@
       rpiDeb = pkgs.packageForDebian demo {
         targetSystem = "armv7l-hf-multiplatform";
         pkgConfigPrefix = "/usr/lib/arm-linux-gnueabihf/pkgconfig";
-        name = "zicross-demo-zig";
-        version = "0.1.0";
+        name = pname;
+        inherit version;
         deps = {
           sdl2 = {
             path = "debian/pool/main/libs/libsdl2/libsdl2-2.0-0_2.0.14+dfsg2-3_armhf.deb";

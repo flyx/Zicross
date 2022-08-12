@@ -1,6 +1,6 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross/zig-test;
+    zicross.url = github:flyx/Zicross;
     nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
     utils.url   = github:numtide/flake-utils;
   };

@@ -25,6 +25,15 @@
 #       dependencies = <list of zig packages>;
 #     }
 , zigExecutables ? []
+# list of libraries to be built from zig code.
+# each list item is to have the following structure:
+#
+#    {
+#      name = <output name>;
+#      file = <string: relative path to main zig file>;
+#      dependencies = <list of zig packages>;
+#    }
+, zigLibraries ? []
 # list of tests to run after building.
 # each list item is to have the following structure:
 #
@@ -53,7 +62,10 @@ let
     '';
   };
 in stdenvNoCC.mkDerivation ((
-  builtins.removeAttrs args' [ "zigExecutables" "zigTests" "pkgConfigPrefix" "buildZigAdditional" "buildZigAdditionalHeader" ]
+  builtins.removeAttrs args' [
+    "zigExecutables" "zigLibraries" "zigTests"
+    "pkgConfigPrefix" "buildZigAdditional" "buildZigAdditionalHeader"
+  ]
 ) // {
   # needed because args' doesn't contain the default values
   inherit buildZigAdditional buildZigAdditionalHeader pkgConfigPrefix;
@@ -61,7 +73,7 @@ in stdenvNoCC.mkDerivation ((
   doCheck = builtins.length zigTests > 0;
   configurePhase = let
     fullDeps = builtins.foldl' declZigPackage { state = {}; code = ""; }
-        (lib.lists.flatten (builtins.catAttrs "dependencies" (zigExecutables ++ zigTests)));
+        (lib.lists.flatten (builtins.catAttrs "dependencies" (zigExecutables ++ zigLibraries ++ zigTests)));
   in ''
     targetSharePath=${if builtins.hasAttr "targetSharePath" args' then args'.targetSharePath else "$out/share"}
     runHook preConfigure
@@ -120,7 +132,22 @@ in stdenvNoCC.mkDerivation ((
         b.option(bool, "emit_bin", "emit binaries for tests")
       ) orelse false;
     '' else ""}
-      
+    
+    ${lib.concatStrings (lib.imap1 (i: ziglib: let
+      v = "lib${toString i}";
+    in ''
+      const ${v} = b.addLibrary("${ziglib.name}", "${ziglib.file}");
+      ${v}.setTarget(target);
+      ${v}.setBuildMode(mode);
+      ${v}.linkage = .dynamic;
+      ${v}.main_pkg_path = ".";
+      addPkgConfigLibs(${v})
+      ${lib.concatStrings (builtins.map (pkg: ''
+        ${v}.addPackage(${fullDeps.state.${pkg.name}});
+      '') (ziglib.dependencies or [ ]))}
+      ${v}.install();
+    '') zigLibraries)}
+    
     ${lib.concatStrings (lib.imap1 (i: exec: let
       v = "exec${toString i}";
     in ''
@@ -135,6 +162,7 @@ in stdenvNoCC.mkDerivation ((
       '') (exec.dependencies or [ ]))}
       ${v}.install();
     '') zigExecutables)}
+    
     ${lib.concatStrings (lib.imap1 (i: test: let
       v = "test${toString i}";
     in ''
