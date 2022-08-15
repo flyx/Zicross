@@ -146,6 +146,8 @@ in stdenvNoCC.mkDerivation ((
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (ziglib.dependencies or [ ]))}
       ${v}.install();
+      const ${v}_step = b.step("${ziglib.name}", "${ziglib.description or ""}");
+      ${v}_step.dependOn(&${v}.step);
     '') zigLibraries)}
     
     ${lib.concatStrings (lib.imap1 (i: exec: let
@@ -161,6 +163,8 @@ in stdenvNoCC.mkDerivation ((
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (exec.dependencies or [ ]))}
       ${v}.install();
+      const ${v}_step = b.step("${exec.name}", "${exec.description or ""}");
+      ${v}_step.dependOn(&${v}.step);
     '') zigExecutables)}
     
     ${lib.concatStrings (lib.imap1 (i: test: let
