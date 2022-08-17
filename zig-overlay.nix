@@ -6,7 +6,9 @@
   version ? "0.9.1",
   # whether to pull the master branch at a specified date.
   # must be set to true when giving a date in `version`.
-  master ? false
+  master ? false,
+  # whether the missing ARM header should be downloaded and added to libc headers
+  patchArmHeader ? true
 }:
 
 final: prev: let
@@ -46,7 +48,9 @@ final: prev: let
           "1g4yb51srrfbd4289yj0vrpzzp2rlxllxgz8q4a5zw1n654wzs5a";
       };
     in old.installPhase + ''
-      cp ${armFeatures} $out/lib/libc/glibc/sysdeps/arm/arm-features.h
+      ${if patchArmHeader then ''
+        cp ${armFeatures} $out/lib/libc/glibc/sysdeps/arm/arm-features.h
+      '' else ""}
       printenv cc_impl >$out/bin/cc
       chmod a+x $out/bin/cc
     '';

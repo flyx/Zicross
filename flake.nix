@@ -12,8 +12,9 @@
       logo_data = ./logo_matrix.txt;
       zigOverlayFor = {
         version,
-        master ? false
-      }: import ./zig-overlay.nix { inherit zig-flake version master; };
+        master ? false,
+        patchArmHeader ? true
+      }: import ./zig-overlay.nix { inherit zig-flake version master patchArmHeader; };
     };
   };
 }
