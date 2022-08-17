@@ -64,6 +64,5 @@ final: prev: let
 in {
   inherit zig;
   zigStdenv = prev.overrideCC prev.clangStdenv zig;
-  buildZig = final.callPackage (import ./buildZig.nix) { };
+  buildZig = final.callPackage (import ./buildZig.nix) { onZigMaster = master; };
 }
-

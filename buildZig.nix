@@ -1,4 +1,4 @@
-{lib, zig, stdenvNoCC, pkg-config, system}:
+{lib, zig, stdenvNoCC, pkg-config, system, onZigMaster ? false}:
 
 { name ? "${args'.pname}-${args'.version}"
 # pkg-config prefix within buildInputs. this may depend on
@@ -54,7 +54,7 @@ let
     code = deps.code + ''
       const ${state.${package.name}} = std.build.Pkg{
         .name = "${package.name}",
-        .path = .{.path = "${if (builtins.hasAttr "src" package) then "${package.src}/" else ""}${package.main}"},
+        .${if onZigMaster then "source" else "path"} = .{.path = "${if (builtins.hasAttr "src" package) then "${package.src}/" else ""}${package.main}"},
         .dependencies = &.{
           ${lib.concatStringsSep ",\n" (map (package: state.${package.name}) (package.dependencies or [ ]))}
         }
