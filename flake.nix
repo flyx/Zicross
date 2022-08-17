@@ -9,7 +9,11 @@
     lib = let
       patch-pkg-config = import ./patch-pkg-config.nix;
     in {
-      logo_data = ./logo_matrix.txt; 
+      logo_data = ./logo_matrix.txt;
+      zigOverlayFor = {
+        version,
+        master ? false
+      }: import ./zig-overlay.nix { inherit zig-flake version master; };
     };
   };
 }

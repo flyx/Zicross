@@ -1,8 +1,21 @@
 # provided by the flake
-{zig-flake}:
+{
+  # the flake containing the zig compiler
+  zig-flake,
+  # version. can be a release version or a date.
+  version ? "0.9.1",
+  # whether to pull the master branch at a specified date.
+  # must be set to true when giving a date in `version`.
+  master ? false
+}:
 
 final: prev: let
-  zig = zig-flake.packages.${prev.system}."0.9.1".overrideAttrs (old: let
+  base = if master then
+    zig-flake.packages.${prev.system}.master.${version}
+  else
+    zig-flake.packages.${prev.system}.${version};
+  
+  zig = base.overrideAttrs (old: let
     macos_sysroot = if prev.stdenv.isDarwin then "${final.darwin.apple_sdk.MacOSX-SDK}" else "";
   in {
     cc_impl = ''
