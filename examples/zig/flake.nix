@@ -57,6 +57,7 @@
             name = "zicross_demo_zig";
             file = "main.zig";
             dependencies = zigPackages;
+            install = true;
           }
         ];
         zigTests = [
