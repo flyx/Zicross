@@ -155,20 +155,24 @@ in stdenvNoCC.mkDerivation ((
       const ${v} = b.addExecutable("${exec.name}", "${exec.file}");
       ${v}.setTarget(${if (builtins.hasAttr "target" exec) then (toStructLiteral exec.target) else "target"});
       ${v}.setBuildMode(mode);
-      ${v}.linkage = .dynamic;
       ${v}.main_pkg_path = ".";
-      addPkgConfigLibs(${v});
+      ${if (exec.install or false) then ''
+        ${v}.linkage = .dynamic;
+        ${v}.install();
+        ${if buildInputs != [ ] then "addPkgConfigLibs(${v});" else ""}
+      '' else ""}
       ${lib.concatStrings (builtins.map (pkg: ''
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (exec.dependencies or [ ]))}
       ${lib.concatStrings (builtins.map (gen: ''
         ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
       '') (exec.generators or [ ]))}
-      ${if (exec.install or false) then "${v}.install();" else ""}
+      
       const ${v}_step = b.step("${exec.name}", "${exec.description or ""}");
       ${v}_step.dependOn(&${v}.step);
       const ${v}_run = ${v}.run();
       ${v}_run.cwd = ".";
+      ${v}_run.step.dependOn(&${v}.step);
       
     '') zigExecutables)}
     
@@ -178,16 +182,19 @@ in stdenvNoCC.mkDerivation ((
       const ${v} = b.addSharedLibrary("${ziglib.name}", "${ziglib.file}", .unversioned);
       ${v}.setTarget(${if (builtins.hasAttr "target" ziglib) then (toStructLiteral ziglib.target) else "target"});
       ${v}.setBuildMode(mode);
-      ${v}.linkage = .dynamic;
       ${v}.main_pkg_path = ".";
-      addPkgConfigLibs(${v});
+      ${if (ziglib.install or false) then ''
+        ${v}.linkage = .dynamic;
+        ${v}.install();
+        ${if buildInputs != [ ] then "addPkgConfigLibs(${v});" else ""}
+      '' else ""}
       ${lib.concatStrings (builtins.map (pkg: ''
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (ziglib.dependencies or [ ]))}
       ${lib.concatStrings (builtins.map (gen: ''
         ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
       '') (ziglib.generators or [ ]))}
-      ${if (ziglib.install or false) then "${v}.install();" else ""}
+      
       const ${v}_step = b.step("${ziglib.name}", "${ziglib.description or ""}");
       ${v}_step.dependOn(&${v}.step);
       
