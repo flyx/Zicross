@@ -20,19 +20,30 @@
 # each list item is to have the following structure:
 # 
 #     {
-#       name = <output name>;
-#       file = <string: relative path to zig file containing `pub fn main`>;
-#       dependencies = <list of zig packages>;
+#       name         = <output name>;
+#       file         = <string: relative path to zig file containing `pub fn main`>;
+#       dependencies = <list of zig packages>; # optional
+#       install      = <bool>;                 # optional
+#       target       = <attrset>;              # optional
+#       generators   = [
+#         {
+#           name = <output name>; # name of a zigExecutable
+#           # TODO: args? working directory?
+#         } ...
+#       ]; # optional
 #     }
 , zigExecutables ? []
 # list of libraries to be built from zig code.
 # each list item is to have the following structure:
 #
-#    {
-#      name = <output name>;
-#      file = <string: relative path to main zig file>;
-#      dependencies = <list of zig packages>;
-#    }
+#     {
+#       name         = <output name>;
+#       file         = <string: relative path to main zig file>;
+#       dependencies = <list of zig packages>; # optional
+#       install      = <bool>;                 # optional
+#       target       = <attrset>;              # optional
+#       generators   = [ … ];                  # optional, see above
+#     }
 , zigLibraries ? []
 # list of tests to run after building.
 # each list item is to have the following structure:
@@ -42,6 +53,7 @@
 #       description = <string that describes the test>;
 #       file = <string: relative path to zig file containing the test(s)>;
 #       dependencies = <list of zig packages>;
+#       generators   = [ … ];                  # optional, see above
 #     }
 , zigTests ? []
 , ...}@args':
@@ -69,11 +81,15 @@ in stdenvNoCC.mkDerivation ((
 ) // {
   # needed because args' doesn't contain the default values
   inherit buildZigAdditional buildZigAdditionalHeader pkgConfigPrefix;
-  nativeBuildInputs = nativeBuildInputs ++ [ pkg-config ];
+  nativeBuildInputs = nativeBuildInputs ++ [ pkg-config zig ];
   doCheck = builtins.length zigTests > 0;
   configurePhase = let
     fullDeps = builtins.foldl' declZigPackage { state = {}; code = ""; }
         (lib.lists.flatten (builtins.catAttrs "dependencies" (zigExecutables ++ zigLibraries ++ zigTests)));
+    needsTarget = builtins.foldl' (x: y: x || (!(builtins.hasAttr "target" y))) false (zigLibraries ++ zigExecutables);
+    toStructLiteral = set: ''
+      .{${lib.concatStrings (lib.mapAttrsToList (name: value: ".${name} = .${value}, ") set)}}
+    '';
   in ''
     targetSharePath=${if builtins.hasAttr "targetSharePath" args' then args'.targetSharePath else "$out/share"}
     runHook preConfigure
@@ -122,7 +138,7 @@ in stdenvNoCC.mkDerivation ((
     }
 
     pub fn build(b: *std.build.Builder) !void {
-      const target = b.standardTargetOptions(.{});
+      ${if needsTarget then "const target = b.standardTargetOptions(.{});" else ""}
       const mode = b.standardReleaseOptions();
       
     ${if builtins.length zigTests > 0 then ''
@@ -133,28 +149,11 @@ in stdenvNoCC.mkDerivation ((
       ) orelse false;
     '' else ""}
     
-    ${lib.concatStrings (lib.imap1 (i: ziglib: let
-      v = "lib${toString i}";
-    in ''
-      const ${v} = b.addSharedLibrary("${ziglib.name}", "${ziglib.file}", .unversioned);
-      ${v}.setTarget(target);
-      ${v}.setBuildMode(mode);
-      ${v}.linkage = .dynamic;
-      ${v}.main_pkg_path = ".";
-      addPkgConfigLibs(${v});
-      ${lib.concatStrings (builtins.map (pkg: ''
-        ${v}.addPackage(${fullDeps.state.${pkg.name}});
-      '') (ziglib.dependencies or [ ]))}
-      ${v}.install();
-      const ${v}_step = b.step("${ziglib.name}", "${ziglib.description or ""}");
-      ${v}_step.dependOn(&${v}.step);
-    '') zigLibraries)}
-    
     ${lib.concatStrings (lib.imap1 (i: exec: let
       v = "exec${toString i}";
     in ''
       const ${v} = b.addExecutable("${exec.name}", "${exec.file}");
-      ${v}.setTarget(target);
+      ${v}.setTarget(${if (builtins.hasAttr "target" exec) then (toStructLiteral exec.target) else "target"});
       ${v}.setBuildMode(mode);
       ${v}.linkage = .dynamic;
       ${v}.main_pkg_path = ".";
@@ -162,10 +161,37 @@ in stdenvNoCC.mkDerivation ((
       ${lib.concatStrings (builtins.map (pkg: ''
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (exec.dependencies or [ ]))}
-      ${v}.install();
+      ${lib.concatStrings (builtins.map (gen: ''
+        ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
+      '') (exec.generators or [ ]))}
+      ${if (exec.install or false) then "${v}.install();" else ""}
       const ${v}_step = b.step("${exec.name}", "${exec.description or ""}");
       ${v}_step.dependOn(&${v}.step);
+      const ${v}_run = ${v}.run();
+      ${v}_run.cwd = ".";
+      
     '') zigExecutables)}
+    
+    ${lib.concatStrings (lib.imap1 (i: ziglib: let
+      v = "lib${toString i}";
+    in ''
+      const ${v} = b.addSharedLibrary("${ziglib.name}", "${ziglib.file}", .unversioned);
+      ${v}.setTarget(${if (builtins.hasAttr "target" ziglib) then (toStructLiteral ziglib.target) else "target"});
+      ${v}.setBuildMode(mode);
+      ${v}.linkage = .dynamic;
+      ${v}.main_pkg_path = ".";
+      addPkgConfigLibs(${v});
+      ${lib.concatStrings (builtins.map (pkg: ''
+        ${v}.addPackage(${fullDeps.state.${pkg.name}});
+      '') (ziglib.dependencies or [ ]))}
+      ${lib.concatStrings (builtins.map (gen: ''
+        ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
+      '') (ziglib.generators or [ ]))}
+      ${if (ziglib.install or false) then "${v}.install();" else ""}
+      const ${v}_step = b.step("${ziglib.name}", "${ziglib.description or ""}");
+      ${v}_step.dependOn(&${v}.step);
+      
+    '') zigLibraries)}
     
     ${lib.concatStrings (lib.imap1 (i: test: let
       v = "test${toString i}";
@@ -174,12 +200,21 @@ in stdenvNoCC.mkDerivation ((
       ${lib.concatStrings (builtins.map (pkg: ''
         ${v}.addPackage(${fullDeps.state.${pkg.name}});
       '') (test.dependencies or [ ]))}
+      ${lib.concatStrings (builtins.map (gen: ''
+        ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
+      '') (test.generators or [ ]))}
       ${v}.setFilter(test_filter);
       ${v}.emit_bin = testEmitOption(emit_bin, "${test.name}");
       ${v}.main_pkg_path = ".";
       const ${v}_step = b.step("${test.name}", "${test.description or ""}");
       ${v}_step.dependOn(&${v}.step);
     '') zigTests)}
+    ${if zigTests != [ ] then ''
+      const test_step = b.step("test", "run all tests");
+      ${lib.concatStrings (lib.imap1 (i: _: ''
+        test_step.dependOn(&test${toString i}.step);
+      '') zigTests)}
+    '' else ""}
     EOF
     printenv buildZigAdditional >>build.zig
     echo "}" >>build.zig
@@ -201,12 +236,10 @@ in stdenvNoCC.mkDerivation ((
     runHook postBuild
   '';
   # don't check when cross-compiling
-  checkPhase = ''
+  checkPhase = if zigTests == [ ] then "" else ''
     if [ -z ''${ZIG_TARGET+x} ]; then
       runHook preCheck
-    ${lib.concatStrings (builtins.map (test: ''
-      ${zig}/bin/zig build ${test.name} $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
-    '') zigTests)}
+      ${zig}/bin/zig build test $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
       runHook postCheck
     fi
   '';
