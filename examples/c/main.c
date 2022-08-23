@@ -2,7 +2,8 @@
 #include<stdlib.h>
 #include<stdio.h>
 
-#include <SDL.h>
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
 
 #include "resources.h"
 

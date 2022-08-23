@@ -4,8 +4,12 @@ final: prev: {
     pkg:
     # where to find *.pc files in the given MSYS2 packages.
     { pkgConfigPrefix ? "/clang64/lib/pkgconfig"
-    # set of debian packages to download, patch and put into buildInputs
+    # set of MSYS2 packages to download, patch and put into buildInputs
     , deps ? {}
+    # list of executables in /bin where a `.exe` should be appended.
+    , appendExe ? [ ]
+    # build as GUI application (without CMD opening at startup)
+    , guiSubsystem ? false
     # name of the target system (in NixOS terminology)
     , targetSystem}:
     
@@ -44,14 +48,24 @@ final: prev: {
           runHook postInstall
         '';
       });
-    in pkg.overrideAttrs( _: {
-      inherit pkgConfigPrefix;
+    in pkg.overrideAttrs( origAttrs: {
+      inherit pkgConfigPrefix appendExe;
       ZIG_TARGET = prev.zig.systemName.${targetSystem};
       buildInputs = prev.lib.mapAttrsToList pkgsFromPacman deps;
       targetSharePath = "../share";
-      postInstall = ''
+      preBuild = ''
+        for item in $buildInputs; do
+          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$item$pkgConfigPrefix"
+          export CFLAGS="$CFLAGS -I$item/clang64/include"
+        done
+        ${if guiSubsystem then ''export CFLAGS="$CFLAGS -mwindows"'' else ""}
+      '' + (origAttrs.preBuild or ""); 
+      postInstall = (origAttrs.postBuild or "") + ''
         for item in $buildInputs; do
           cp -t $out/bin $item/clang64/bin/*.dll | true # allow deps without dlls
+        done
+        for item in $appendExe; do
+          mv $out/bin/$item $out/bin/$item.exe
         done
       '';
     });
@@ -63,11 +77,17 @@ final: prev: {
     { pkgConfigPrefix ? "/clang64/lib/pkgconfig"
     # set of MSYS2 packages to download, patch and put into buildInputs
     , deps ? {}
+    # list of executables in /bin where a `.exe` should be appended.
+    , appendExe ? [ ]
+    # build as GUI application (without CMD opening at startup)
+    , guiSubsystem ? false
     # name of the target system (in NixOS terminology)
-    , targetSystem}@args':
+    , targetSystem}:
     
     let
-      src = final.buildForWindows pkg args';
+      src = final.buildForWindows pkg {
+        inherit pkgConfigPrefix deps appendExe guiSubsystem targetSystem;
+      };
     in prev.stdenvNoCC.mkDerivation {
       name = "${src.name}-win64.zip";
       unpackPhase = ''

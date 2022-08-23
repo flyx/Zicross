@@ -37,8 +37,8 @@
           EOF
         '';
         preBuild = ''
-          export CFLAGS="$(pkg-config --cflags sdl2)"
-          export LDFLAGS="$(pkg-config --libs sdl2)"
+          export CFLAGS="$CFLAGS $(pkg-config --cflags sdl2)"
+          export LDFLAGS="$LDFLAGS $(pkg-config --libs sdl2)"
         '';
         preInstall = ''
           mkdir -p $out/share
@@ -75,12 +75,14 @@
       };
       win64Zip = pkgs.packageForWindows demo {
         targetSystem = "x86_64-windows";
+        appendExe = [ "zicross_demo_c" ];
+        guiSubsystem = true;
         deps = {
           sdl2 = {
             tail = "SDL2-2.0.22-1-any.pkg.tar.zst";
             sha256 = "13v4wavbxzdnmg6b7qrv7031dmdbd1rn6wnsk9yn4kgs110gkk90";
             postPatch = ''
-              ${pkgs.gnused}/bin/sed -i "s/-lSDL2main//g" upstream/clang64/lib/pkgconfig/sdl2.pc
+              ${pkgs.gnused}/bin/sed -i "s/-lSDL2main//g; s/-Dmain=SDL_main//g" upstream/clang64/lib/pkgconfig/sdl2.pc
             '';
           };
           iconv = {
