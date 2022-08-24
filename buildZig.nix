@@ -239,14 +239,14 @@ in stdenvNoCC.mkDerivation ((
     fi
     
     export PATH=${pkg-config}/bin:$PATH # so that zig build sees it
-    ${zig}/bin/zig build $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
+    ${zig}/bin/zig build $ADDITIONAL_FLAGS
     runHook postBuild
   '';
   # don't check when cross-compiling
   checkPhase = if zigTests == [ ] then "" else ''
     if [ -z ''${ZIG_TARGET+x} ]; then
       runHook preCheck
-      ${zig}/bin/zig build test $ADDITIONAL_FLAGS $CFLAGS $LDFLAGS
+      ${zig}/bin/zig build test $ADDITIONAL_FLAGS
       runHook postCheck
     fi
   '';
