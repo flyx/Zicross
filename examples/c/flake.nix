@@ -52,7 +52,8 @@
       rpiDeb = pkgs.packageForDebian demo {
         targetSystem = "armv7l-hf-multiplatform";
         pkgConfigPrefix = "/usr/lib/arm-linux-gnueabihf/pkgconfig";
-        name = pname;
+        includeDirs = [ "/usr/include" "/usr/include/arm-linux-gnueabihf" ];
+        name = "zicross-demo-c";
         inherit version;
         deps = {
           sdl2 = {

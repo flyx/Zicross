@@ -8,6 +8,8 @@ final: prev: {
     , version
     # where to find *.pc files in the given debian packages.
     , pkgConfigPrefix ? "/usr/lib/pkgconfig"
+    # default include directories inside dependencies.
+    , includeDirs ? [ "/usr/include" ]
     # set of debian packages to download, patch and put into buildInputs
     , deps ? {}
     # name of the target system (in NixOS terminology)
@@ -47,8 +49,8 @@ final: prev: {
       debianArch = {
         "armv7l-hf-multiplatform" = "armhf";
       };
-    in pkg.overrideAttrs (_: {
-      inherit pkgConfigPrefix;
+    in pkg.overrideAttrs (origAttrs: {
+      inherit pkgConfigPrefix includeDirs;
       ZIG_TARGET = prev.zig.systemName.${targetSystem};
       buildInputs = prev.lib.mapAttrsToList pkgFromDebs deps;
       passthru.deb = {
@@ -60,6 +62,14 @@ final: prev: {
         );
       };
       targetSharePath = "/usr/share/${name}";
+      preBuild = ''
+        for item in $buildInputs; do
+          export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$item$pkgConfigPrefix"
+          for dir in $includeDirs; do
+            export CFLAGS="$CFLAGS -I$item$dir"
+          done
+        done
+      '' + (origAttrs.preBuild or "");
     });
   packageForDebian = 
     # the original package to override
@@ -70,6 +80,8 @@ final: prev: {
     , version
     # where to find *.pc files in the given debian packages.
     , pkgConfigPrefix ? "/usr/lib/pkgconfig"
+    # default include directories inside dependencies.
+    , includeDirs ? [ "/usr/include" ]
     # set of debian packages to download, patch and put into buildInputs
     , deps ? {}
     # name of the target system (in NixOS terminology)
