@@ -40,12 +40,10 @@
     },
     "zicross": {
       "locked": {
-        "lastModified": 1661368522,
-        "narHash": "sha256-aNuCZz3l+YJCyRobXUc8T3UgwcYMqUK4zyFQxIsTgBA=",
-        "owner": "flyx",
-        "repo": "Zicross",
-        "rev": "db5c7151a23f19fc7912dd0fe6f88a4bd7175664",
-        "type": "github"
+        "lastModified": 1661699434,
+        "narHash": "sha256-I9gLCCbO5EuPK47UxvckXqm2Q10xSOnWmW/wPPutqkE=",
+        "type": "git",
+        "url": "file:///Users/flyx/Projects/Zicross"
       },
       "original": {
         "owner": "flyx",

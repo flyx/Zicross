@@ -2,11 +2,11 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1659253578,
-        "narHash": "sha256-9xjr2VFCQEpgCKdfZjOhiaLZ/XozLp+Y3UmUn44wYZg=",
+        "lastModified": 1661617163,
+        "narHash": "sha256-NN9Ky47j8ohgPhA9JZyfkYIbbAo6RJkGz+7h8/exVpE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ede02b4ccb13557b95058d66146640a2b0bb198f",
+        "rev": "0ba2543f8c855d7be8e90ef6c8dc89c1617e8a08",
         "type": "github"
       },
       "original": {
@@ -40,12 +40,10 @@
     },
     "zicross": {
       "locked": {
-        "lastModified": 1661368861,
-        "narHash": "sha256-6KekwJQ5tegzOTFECkKRqr06WqKL4XaRDB8DP7rB8Wo=",
-        "owner": "flyx",
-        "repo": "Zicross",
-        "rev": "5b478452857d59c7050de5be3d8522f6b4d07c8a",
-        "type": "github"
+        "lastModified": 1661699434,
+        "narHash": "sha256-bkMUUSOMSZmGIH/dAZXUcZteGl1sGvpDJMsDYWzP+tk=",
+        "type": "git",
+        "url": "file:///Users/flyx/Projects/Zicross"
       },
       "original": {
         "owner": "flyx",

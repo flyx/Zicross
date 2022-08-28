@@ -32,8 +32,10 @@
           EOF
         '';
         preBuild = ''
+          echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
           export CFLAGS="$CFLAGS $(pkg-config --cflags sdl2)"
           export LDFLAGS="$LDFLAGS $(pkg-config --libs sdl2)"
+          echo CFLAGS=$CFLAGS
         '';
         preInstall = ''
           mkdir -p $out/share
@@ -72,7 +74,6 @@
       win64Zip = pkgs.packageForWindows demo {
         targetSystem = "x86_64-windows";
         appendExe = [ "zicross_demo_c" ];
-        guiSubsystem = true;
         deps = {
           sdl2 = {
             tail = "SDL2-2.0.22-1-any.pkg.tar.zst";

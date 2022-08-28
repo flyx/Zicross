@@ -62,14 +62,14 @@ final: prev: {
         );
       };
       targetSharePath = "/usr/share/${name}";
-      preBuild = ''
+      postConfigure = ''
         for item in $buildInputs; do
           export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$item$pkgConfigPrefix"
           for dir in $includeDirs; do
             export CFLAGS="$CFLAGS -I$item$dir"
           done
         done
-      '' + (origAttrs.preBuild or "");
+      '' + (origAttrs.postConfigure or "");
     });
   packageForDebian = 
     # the original package to override

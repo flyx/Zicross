@@ -8,8 +8,6 @@ final: prev: {
     , deps ? {}
     # list of executables in /bin where a `.exe` should be appended.
     , appendExe ? [ ]
-    # build as GUI application (without CMD opening at startup)
-    , guiSubsystem ? false
     # name of the target system (in NixOS terminology)
     , targetSystem}:
     
@@ -53,14 +51,13 @@ final: prev: {
       ZIG_TARGET = prev.zig.systemName.${targetSystem};
       buildInputs = prev.lib.mapAttrsToList pkgsFromPacman deps;
       targetSharePath = "../share";
-      preBuild = ''
+      postConfigure = ''
         for item in $buildInputs; do
           export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$item$pkgConfigPrefix"
           export CFLAGS="$CFLAGS -I$item/clang64/include"
         done
-        ${if guiSubsystem then ''export CFLAGS="$CFLAGS -mwindows"'' else ""}
-      '' + (origAttrs.preBuild or ""); 
-      postInstall = (origAttrs.postBuild or "") + ''
+      '' + (origAttrs.postConfigure or ""); 
+      postInstall = (origAttrs.postInstall or "") + ''
         for item in $buildInputs; do
           cp -t $out/bin $item/clang64/bin/*.dll | true # allow deps without dlls
         done
@@ -79,14 +76,12 @@ final: prev: {
     , deps ? {}
     # list of executables in /bin where a `.exe` should be appended.
     , appendExe ? [ ]
-    # build as GUI application (without CMD opening at startup)
-    , guiSubsystem ? false
     # name of the target system (in NixOS terminology)
     , targetSystem}:
     
     let
       src = final.buildForWindows pkg {
-        inherit pkgConfigPrefix deps appendExe guiSubsystem targetSystem;
+        inherit pkgConfigPrefix deps appendExe targetSystem;
       };
     in prev.stdenvNoCC.mkDerivation {
       name = "${src.name}-win64.zip";

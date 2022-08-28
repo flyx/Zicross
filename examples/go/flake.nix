@@ -22,22 +22,28 @@
     mySDL2 = if pkgs.stdenv.isDarwin then (pkgs.SDL2.override {
       x11Support = false;
     }) else pkgs.SDL2;
+    postUnpack = ''
+      mv "$sourceRoot" source
+      sourceRoot=source
+    '';
   in rec {
     packages = rec {
       demo = pkgs.buildGoModule {
         inherit pname version;
         src = ./.;
         subPackages = [ "zicross_demo_go" ];
-        vendorSha256 = "T2Sd5m5ljhNOSx6esfEubUvcmno4MHJy+98ivi5gZ8Q=";
+        vendorSha256 = "U+X2hrm1J5/Oeum9wcja/hZOKzVPWHMkeJVikOjq9IY=";
         nativeBuildInputs = [ pkgs.pkg-config ];
         buildInputs = with pkgs; [ mySDL2 SDL2_ttf SDL2_image ];
         targetSharePath="${placeholder "out"}/share";
+        
         # workaround for buildGoModule not being able to take sources in a `go`
         # directory as input
-        postUnpack = ''
-          mv "$sourceRoot" source
-          sourceRoot=source
-        '';
+        overrideModAttrs = (_: {
+          inherit postUnpack;
+        });
+        inherit postUnpack;
+        
         postConfigure = ''
           cat <<EOF >zicross_demo_go/generated.go
           package main
@@ -49,14 +55,61 @@
           mkdir -p $out/share
           cp ${zicross.lib.logo_data} $out/share/logo.txt
         '';
+        meta = {
+          maintainers = [ "Felix Krause <contact@flyx.org>" ];
+          description = "Zicross Demo App (in Go)";
+        };
       };
-      win64Zip = pkgs.packageForWindows (demo.overrideAttrs {
+      rpiDeb = pkgs.packageForDebian (demo.overrideAttrs (origAttrs: {
+        GOOS = "linux";
+        GOARCH = "arm";
+      })) {
+        targetSystem = "armv7l-hf-multiplatform";
+        pkgConfigPrefix = "/usr/lib/arm-linux-gnueabihf/pkgconfig";
+        includeDirs = [ "/usr/include" "/usr/include/arm-linux-gnueabihf" ];
+        name = "zicross-demo-go";
+        inherit version;
+        deps = {
+          sdl2 = {
+            path = "debian/pool/main/libs/libsdl2/libsdl2-2.0-0_2.0.14+dfsg2-3_armhf.deb";
+            sha256 = "1z3bcjx225gp6lcbcd7h15cvhjik089y5pgivl2v3kfp61zm9wv4";
+            dev = {
+              path = "debian/pool/main/libs/libsdl2/libsdl2-dev_2.0.14+dfsg2-3_armhf.deb";
+              sha256 = "17d8qms1p7961kl0g7hgmkn0qx9avjnxwlmsvx677z5xb8vchl3y";
+            };
+            packageName = "libsdl2-2.0-0";
+            minVersion = "2.0.0";
+          };
+          libcrypt = {
+            path = "debian/pool/main/libx/libxcrypt/libcrypt1_4.4.18-4_armhf.deb";
+            sha256 = "0mcr0s5dwcj8rlr70sf6n3271pg7h73xk6zb8r7xvhp2fm51fyri";
+            packageName = "libcrypt1";
+            minVersion = "1:4.4.18";
+          };
+          libx11-dev = {
+            path = "debian/pool/main/libx/libx11/libx11-dev_1.7.2-1_armhf.deb";
+            sha256 = "0n0r21z7lp582pk51fp8dwaymz3jz54nb26xmfwls7q4xbj5f7wz";
+            packageName = "libx11-dev";
+            minVersion = "2:1.7.0";
+          };
+          x11proto-dev = {
+            path = "debian/pool/main/x/xorgproto/x11proto-dev_2020.1-1_all.deb";
+            sha256 = "1xb5ll2fg3as128m5vi6w5kwbcyc732hljy16i66dllsgmc8smnm";
+            packageName = "x11proto-dev";
+            minVersion = "2020.1";
+          };
+        };
+      };
+      win64Zip = pkgs.packageForWindows (demo.overrideAttrs (origAttrs: {
         GOOS = "windows";
         GOARCH = "amd64";
-      }) {
+        postConfigure = origAttrs.postConfigure + ''
+          export CGO_LDFLAGS="$CGO_LDFLAGS $(pkg-config --libs sdl2)"
+          echo "generated:"
+          cat zicross_demo_go/generated.go
+        '';
+      })) {
         targetSystem = "x86_64-windows";
-        appendExe = [ "zicross_demo_go" ];
-        guiSubsystem = true;
         deps = {
           sdl2 = {
             tail = "SDL2-2.0.22-1-any.pkg.tar.zst";
