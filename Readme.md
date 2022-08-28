@@ -28,6 +28,10 @@ Zicross will fetch all other dependencies automatically via Nix.
 ## Usage
 
 Familiarity with Nix Flakes is assumed.
+This documentation is very rudimentary, check the `examples` folder for examples.
+It contains Flakes for each of the languages *C*, *Go* and *Zig*.
+To demonstrate third-party dependencies, the code renders Zicross' logo into a window via `SDL2`.
+All flakes can compile natively, to Windows, and to a Raspberry Pi running Debian.
 
 Generally, you write a derivation that builds your code natively.
 Your Flake should inject `overlays.zig` and, if you're writing *Go*, also `overlays.go` (which depends on the former).
@@ -54,9 +58,6 @@ The `packageForWindows` function will instead output a `.zip` file that contains
 This is for simple consumption by the end-user, who likely isn't familiar with MSYS2.
 **Important:** This means that when building for Windows, it is your responsibility to update dependencies.
 When building for Debian, it is not, since the dependencies can be updated independently from your package.
-
-This documentation is very rudimentary, check the `examples` folder for examples.
-It contains projects in *C*, *Go* and *Zig* which each can compile natively, to Windows, and to a Raspberry Pi running Debian.
 
 `buildZig` has been specifically designed to be a drop-in for Zig's native build system, and actually creates a `build.zig` to compile your code.
 The advantage of `buildZig` is that you can depend on third-party libraries by simply fetching them from GitHub (or somewhere else) – Zig currently has no official package manager.
