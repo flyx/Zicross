@@ -2,95 +2,75 @@
 <h1 align="center">Zicross</h1>
 <h4 align="center">A <a href="https://nixos.org">Nix</a> toolbox for cross-compilation and foreign packaging, using <a href="https://ziglang.org">Zig</a></h4>
 
-**Zicross** allows you to cross-compile your code into binaries for foreign CPU architectures and operating systems.
+**Zicross** is a build system for [Nix Flakes](https://nixos.wiki/wiki/Flakes).
+It allows you to cross-compile your C, Go or Zig code for foreign CPU architectures and operating systems.
 It also provides tools for packaging the resulting binary in the target system's format.
 
-The goal of this toolbox is to make it viable to use Nix Flakes as a general build system for your application, while still being able to support packaging for environments outside of the Nix ecosystem (e.g. Windows).
+The goal of this toolbox is to make it viable to use Nix Flakes as a general build system for your application, while still being able to target environments outside of the Nix ecosystem (e.g. Windows).
 In particular, Zicross helps you with linking against 3rd party libraries available for the target system.
-Packaging libraries to be consumed by other applications is currently not an intended use-case.
 
 Zicross uses the **Zig** compiler, which includes `clang` and can thus process C/C++ code, for cross-compiling.
-It provides a small build system for *Zig* projects, and additional helper functions for C/C++ and Go are planned.
+It provides a small build system for *Zig* projects, as well as support scripts for *C* and *Go* projects.
+*Go* projects need Zicross only when they depend on *C* libraries, since pure Go is able to cross-compile without any help from *Zig*.
+
+**This is pre-alpha software**.
+Use at your own risk.
+Will likely fail when doing anything complex.
+Feel free to report problems.
 
 ## Prerequisites
 
 Zicross is a [Nix Flake](https://nixos.wiki/wiki/Flakes), you'll need the [Nix Package Manager](https://nixos.org) and enable the experimental Flakes feature.
-You're not required to use NixOS, any OS that runs Nix will do, including macOS and WSL on Windows.
+You're not required to use NixOS, any Nix-capable host will do, including macOS and WSL on Windows.
 
 Zicross will fetch all other dependencies automatically via Nix.
 
 ## Usage
 
-**This documentation is rudimentary and not a tutorial.**
-Consider having a look at the `examples` folder.
+Familiarity with Nix Flakes is assumed.
 
-Zicross provides two kinds of tools: *Builders* and *Package Translators*.
-*Builders* are build functions similar to those already existing in the Nixpkgs ecosystem.
-*Package Translators* are functions that take a derivation built with a *Builder* and modify it to build a package for a foreign target system.
-*Package Translators* require that the derivation they translate has been built by one of Zicross' *Builders*.
+Generally, you write a derivation that builds your code natively.
+Your Flake should inject `overlays.zig` and, if you're writing *Go*, also `overlays.go` (which depends on the former).
+Use `zigStdenv` for a derivation building a *C* project.
+`buildGoModule` injected by `overlays.go` is to be used for *Go* projects.
+`buildZig` is for *Zig* projects.
+You provide third-party libraries via `buildInputs` as usual.
 
-The important property of Zicross **Builders** is that they call `mkDerivation` with an argument named `ZIG_TARGET`.
-Translators will take advantage of this by overriding it when cross-compiling.
+For each supported target system, an overlay is available that provides functions to package for that system.
+Currently available are `overlays.debian` and `overlays.windows`.
+These will give you `buildForDebian`, `packageForDebian`, `buildForWindows`, and `packageForWindows`.
+Each of those functions takes your base package as first argument, and a configuration set as second argument.
+The package you provide as first argument must have been defined as described above.
 
-**Package Translators** are functions that take two arguments:
+The foreign builders require a set of `deps`, which are dependencies that are to be fetched from the target system's package repository (MSYS2 for Windows).
+You must specify some meta information, including the name and hash of the package, and the builder will fetch and process the packages and then *replace the original `buildInputs`* with those packages.
+The builders also do some additional tweaking that is required.
 
- * The package `pkg` that is to be translated, which is expected to be an output of `mkDerivation` with overridable attributes `ZIG_TARGET` and `buildInputs` (usually from one of Zicross' *Builders*).
-   `ZIG_TARGET` will be used to configure cross-compilation, while `buildInputs` will be used to substitute the native dependencies with ones from the target system.
- * _Arguments_ `args` for the Translator.
+The output of packaging functions depends on the target system.
+For example, `packageForDebian` will output a `.deb` file that can be installed as package into the target Debian system.
+The package metadata describes its dependencies based on the `deps` you provided.
 
-The following arguments are accepted by every *Package Translator* inside of `args`:
+The `packageForWindows` function will instead output a `.zip` file that contains the executable and *all required DLL dependencies*.
+This is for simple consumption by the end-user, who likely isn't familiar with MSYS2.
+**Important:** This means that when building for Windows, it is your responsibility to update dependencies.
+When building for Debian, it is not, since the dependencies can be updated independently from your package.
 
- * `pkgConfigPrefix` is the path to `*.pc` files within the packages.
-   This has a default value defined by the translator, e.g. `/usr/lib/pkgconfig` for the Debian translators.
- * `deps` is a set of named dependencies, whose format is defined per Translator.
-   A Translator will download and patch these dependencies, then inject them as `buildInputs` into the `pkg` via `overrideAttrs`.
- * `targetSystem` is the name of the target system in NixOS terms.
- * Every Translator may define additional parameters which might be required.
- * Unknown parameters will be forwarded to the given `pkg`'s `overrideAttrs`.
+This documentation is very rudimentary, check the `examples` folder for examples.
+It contains projects in *C*, *Go* and *Zig* which each can compile natively, to Windows, and to a Raspberry Pi running Debian.
 
----
+`buildZig` has been specifically designed to be a drop-in for Zig's native build system, and actually creates a `build.zig` to compile your code.
+The advantage of `buildZig` is that you can depend on third-party libraries by simply fetching them from GitHub (or somewhere else) – Zig currently has no official package manager.
+You can also use it to manage non-Zig dependencies, like C libraries.
 
-Zicross' tools can be injected independently via several overlays to your Nixpkgs instance.
-The following list of overlays assumes you have imported Zicross as `zicross` in your Flake.
+## Developer Documentation
 
-### `zicross.overlays.zig`
+The `zig` package defined in `overlays.zig` contains a `/bin/cc` wrapper script, which can be used as `CC` drop-in and will call `zig cc`.
+It looks for an env variable `ZIG_TARGET` and if found, configures `zig` to cross-compile.
+This is used directly for *C* projects, and indirectly in *Go* projects which will use the wrapper via *CGO* (which processes C dependencies of your Go code).
 
-This overlay provides the package `zig`, which is the current Zig compiler patched to be able to cross-compile code for armhf-based Linux.
-
-The overlay also provides the **builder `buildZig`**:
-`buildZig` is a builder for Zig source code.
-See [buildZig.nix](/buildZig.nix) for details on its parameters.
-
-This builder autogenerates a `build.zig` file and compiles your project with it.
-You specify a list of executables that should be compiled, and the generated `build.zig` file will automatically link them to the given `buildInputs` via `pkg-config`.
-
-The builder is able to handle a dependency tree of zig packages whose documentation is TBD.
-See the `examples/zig` folder for an example.
-
-### `zicross.overlays.debian`
-
-This overlay provides the **package translators `buildForDebian`** and **`packageForDebian`**.
-See [debian-overlay.nix](/debian-overlay.nix) for details on their parameters.
-
-`buildForDebian` builds the executable for Debian in a derivation with the typical layout (`/bin`, `/share` etc).
-Use this if you simply want to create an executable that you can then transfer to your target system.
-
-`packageForDebian` builds a `.deb` package that can be installed on a Debian system.
-You need to provide its `name` and `version`, other `.deb` configuration is pulled from the package's `meta` attributes.
-
-### `zicross.overlays.windows`
-
-This overlay provides the **package translators `buildForWindows`** and **`packageForWindows`**.
-See [windows-overlay.nix](windows-overlay.nix) for details on their parameters.
-
-`buildForWindows` builds the executable for Windows in a derivation with the typical layout (`/bin`, `/share` etc).
-`/bin` contains, besides the executable, also all `.dll` files the executable depends on.
-
-`packageForWindows` packages the structure described above in a simple `zip` file that contains a folder named `<pkg-name>-win64`.
-This should be viable as distribution format to Windows users.
-
-Since this overlay uses MSYS2, it currently only supports 64bit Windows.
-Building MSYS2 packages is currently not supported.
+The foreign builder functions inject a `ZIG_TARGET` value into the given derivation to facilitate cross-compilation.
+The other thing they do is to patch `*.pc` files in the given `deps` so that they can be used within the build script even though they were not written for Nix.
+`pkg-config` is assumed to be used for looking up dependencies.
 
 ## License
 
