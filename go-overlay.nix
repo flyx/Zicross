@@ -29,11 +29,9 @@ final: prev: {
       export CGO_CFLAGS="$CFLAGS -Wno-expansion-to-defined -Wno-nullability-completeness"
     '';
     buildPhase = origAttrs.buildPhase + ''
-      if ! [ -z ''${GOOS+x} ]; then
-        ls -alh $GOPATH/bin
-        ls -alh $GOPATH/bin/''${GOOS}_$GOARCH
+      if ! [ -z ''${ZIG_TARGET+x} ]; then
         mv $GOPATH/bin/''${GOOS}_$GOARCH/* $GOPATH/bin
-        ls -alh $GOPATH/bin
+        rmdir $GOPATH/bin/''${GOOS}_$GOARCH
       fi
     '';
   });
