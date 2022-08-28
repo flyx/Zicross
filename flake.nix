@@ -1,8 +1,9 @@
 {
   inputs = {};
   outputs = {self}: {
-    overlays.zig = import ./zig-overlay.nix { };
-    overlays.debian = import ./debian-overlay.nix;
+    overlays.zig     = import ./zig-overlay.nix { };
+    overlays.go      = import ./go-overlay.nix;
+    overlays.debian  = import ./debian-overlay.nix;
     overlays.windows = import ./windows-overlay.nix;
     lib = let
       patch-pkg-config = import ./patch-pkg-config.nix;

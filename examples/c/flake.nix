@@ -14,11 +14,6 @@
         zicross.overlays.windows
       ];
     };
-    frameworks = if pkgs.lib.hasSuffix "darwin" system then
-      with pkgs.darwin.apple_sdk.frameworks; [
-        AudioToolbox Carbon Cocoa CoreAudio CoreFoundation CoreHaptics
-        ForceFeedback GameController IOKit Metal QuartzCore
-    ] else [];
     
     pname = "zicross_demo_c";
     version = "0.1.0";

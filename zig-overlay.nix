@@ -24,7 +24,6 @@ final: prev: let
   in {
     cc_impl = ''
       #!${final.bash}/bin/bash
-      env
       ADDITIONAL_FLAGS=
       if ! [ -z ''${ZIG_TARGET+x} ]; then
         ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target $ZIG_TARGET"
@@ -35,7 +34,7 @@ final: prev: let
         ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -F$NIX_COREFOUNDATION_RPATH"
         ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -I${macos_sysroot}/usr/include -L${macos_sysroot}/usr/lib -DTARGET_OS_OSX=1 -DTARGET_OS_IPHONE=0"
       fi
-      export ZIG_LOCAL_CACHE_DIR=$(pwd)/zig-cache
+      export ZIG_LOCAL_CACHE_DIR=$TMPDIR/zig-cache
       export ZIG_GLOBAL_CACHE_DIR=$ZIG_LOCAL_CACHE_DIR
       ${builtins.placeholder "out"}/bin/zig cc $ADDITIONAL_FLAGS $@
     '';

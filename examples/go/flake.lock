@@ -40,8 +40,8 @@
     },
     "zicross": {
       "locked": {
-        "lastModified": 1661368901,
-        "narHash": "sha256-SdGv+8ZT0hkn9BpeEAO1MrtT4XcxbGjGc9N15s9ylQg=",
+        "lastModified": 1661545068,
+        "narHash": "sha256-W3+ic1bZDbdGMGv/mCszY++6nhL2eh16qQjbXTxT9qU=",
         "type": "git",
         "url": "file:///Users/flyx/Projects/Zicross"
       },
