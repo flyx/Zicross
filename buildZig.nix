@@ -25,6 +25,7 @@
 #       dependencies = <list of zig packages>; # optional
 #       install      = <bool>;                 # optional
 #       target       = <attrset>;              # optional
+#       stage1       = <bool>;                 # optional, only for zig stage2 compiler
 #       generators   = [
 #         {
 #           name = <output name>; # name of a zigExecutable
@@ -42,6 +43,7 @@
 #       dependencies = <list of zig packages>; # optional
 #       install      = <bool>;                 # optional
 #       target       = <attrset>;              # optional
+#       stage1       = <bool>;                 # optional, only for zig stage2 compiler
 #       generators   = [ … ];                  # optional, see above
 #     }
 , zigLibraries ? []
@@ -167,6 +169,7 @@ in stdenvNoCC.mkDerivation ((
       ${lib.concatStrings (builtins.map (gen: ''
         ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
       '') (exec.generators or [ ]))}
+      ${if (exec.stage1 or false) then "${v}.use_stage1 = true;" else ""}
       
       const ${v}_step = b.step("${exec.name}", "${exec.description or ""}");
       ${v}_step.dependOn(&${v}.step);
@@ -194,6 +197,7 @@ in stdenvNoCC.mkDerivation ((
       ${lib.concatStrings (builtins.map (gen: ''
         ${v}.step.dependOn(&exec${builtins.toString (lib.findFirst (x: x.name == gen.name) null (lib.imap1 (i: v: {i = i; name = v.name;}) zigExecutables)).i}_run.step);
       '') (ziglib.generators or [ ]))}
+      ${if (ziglib.stage1 or false) then "${v}.use_stage1 = true;" else ""}
       
       const ${v}_step = b.step("${ziglib.name}", "${ziglib.description or ""}");
       ${v}_step.dependOn(&${v}.step);
