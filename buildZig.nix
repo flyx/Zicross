@@ -55,6 +55,7 @@
 #       description = <string that describes the test>;
 #       file = <string: relative path to zig file containing the test(s)>;
 #       dependencies = <list of zig packages>;
+#       stage1       = <bool>;                 # optional, only for zig stage2 compiler
 #       generators   = [ … ];                  # optional, see above
 #     }
 , zigTests ? []
@@ -217,6 +218,7 @@ in stdenvNoCC.mkDerivation ((
       ${v}.setFilter(test_filter);
       ${v}.emit_bin = testEmitOption(emit_bin, "${test.name}");
       ${v}.main_pkg_path = ".";
+      ${if (test.stage1 or false) then "${v}.use_stage1 = true;" else ""}
       const ${v}_step = b.step("${test.name}", "${test.description or ""}");
       ${v}_step.dependOn(&${v}.step);
     '') zigTests)}
