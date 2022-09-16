@@ -107,12 +107,12 @@ in stdenvNoCC.mkDerivation ((
       curPath=$input$pkgConfigPrefix
       PKG_CONFIG_PATH=$curPath:$PKG_CONFIG_PATH
       for file in $curPath/*.pc; do
+        [ -e "$file" ] || continue
         filename=$(basename -- $file)
         PKG_CONFIG_LIBS="$PKG_CONFIG_LIBS ''${filename%.pc}"
       done
     done
     export PKG_CONFIG_PATH
-    echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
     mycat >build.zig <<-EOF
     const std = @import("std");

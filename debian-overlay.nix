@@ -58,7 +58,8 @@ final: prev: {
         Version = version;
         Architecture = debianArch.${targetSystem};
         Depends = prev.lib.concatStringsSep ", " (
-          prev.lib.mapAttrsToList (key: value: "${value.packageName} (>= ${value.minVersion})") deps
+          prev.lib.mapAttrsToList (key: value: "${value.packageName} (>= ${value.minVersion})")
+                                  (prev.lib.filterAttrs (_: builtins.hasAttr "packageName") deps)
         );
       };
       targetSharePath = "/usr/share/${name}";
