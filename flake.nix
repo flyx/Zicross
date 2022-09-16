@@ -2,8 +2,9 @@
   inputs = {
     nixpkgs.url = github:nixos/nixpkgs/22.05;
     utils.url = github:numtide/flake-utils;
+    nix-filter.url = github:numtide/nix-filter;
   };
-  outputs = {self, nixpkgs, utils}: {
+  outputs = {self, nixpkgs, utils, nix-filter}: {
     overlays.zig     = import ./zig-overlay.nix { };
     overlays.go      = import ./go-overlay.nix;
     overlays.debian  = import ./debian-overlay.nix;
@@ -42,6 +43,20 @@
         cp -r article/* $out/share/
       '';
     };
-    packages.articleSources = ./article;
+    packages.articleSources = pkgs.buildEnv {
+      name = "zicross-article-sources";
+      paths = [ ./article (nix-filter.lib.filter {
+        root = ./.;
+        include = [ ./examples ];
+        exclude = [
+          (nix-filter.lib.matchExt "lock")
+          (nix-filter.lib.matchExt "sum")
+          (nix-filter.lib.matchExt "md")
+          (nix-filter.lib.matchExt "zig")
+          (nix-filter.lib.matchExt "go")
+          (nix-filter.lib.matchExt "c")
+        ];
+      })];
+    };
   }));
 }
