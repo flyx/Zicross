@@ -49,12 +49,14 @@ We'll be needing `zicross.overlays.debian` and `zicross.overlays.windows` later 
 `pkgs.zigStdenv` is an stdenv that uses Zig as C compiler by setting up `CC` appropriately.
 Generally, this is the `CC` script:
 
-    #!/bin/bash
-    ADDITIONAL_FLAGS=
-    if ! [ -z ''${ZIG_TARGET+x} ]; then
-      ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target $ZIG_TARGET"
-    fi
-    zig cc $ADDITIONAL_FLAGS $@
+{% highlight plain %}
+#!/bin/bash
+ADDITIONAL_FLAGS=
+if ! [ -z ''${ZIG_TARGET+x} ]; then
+  ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -target $ZIG_TARGET"
+fi
+zig cc $ADDITIONAL_FLAGS $@
+{% endhighlight %}
 
 So what we do is to check whether the variable `ZIG_TARGET` is set and if so, hand it over to the compiler via `-target`.
 This is our hook to do cross-compiling.
@@ -72,8 +74,10 @@ In `preBuild`, we use `pkg-config` to set up our `CFLAGS` and `LDFLAGS` for link
 Finally, in `preInstall`, we copy the logo file to the `share` subdirectory.
 Now, we can natively build and run our application via
 
-    $ nix build .#demo
-    $ result/bin/zicross_demo_c
+{% highlight plain %}
+$ nix build .#demo
+$ result/bin/zicross_demo_c
+{% endhighlight %}
 
 ## Cross-Compiling for Debian on Raspberry Pi
 
@@ -102,9 +106,9 @@ Let's discuss the information we provide:
    We can add a related development package as `dev`.
    You can generate the base32 hash from the hex-encoded hash, e.g. [from here][11], by doing
 
-   {% highlight plain %}
-   $ nix-hash --type sha256 --to-base32 <hex input>
-   {% endhighlight %}
+{% highlight plain %}
+$ nix-hash --type sha256 --to-base32 <hex input>
+{% endhighlight %}
 
 Zicross will download the specified packages.
 In their original state, they are not usable because their pkg-config descriptions assume they are unpacked into the system root.
@@ -165,18 +169,20 @@ So besides cross-compiling, Zicross also packaged our application.
 What it did was to use the meta information on the package to write a Debian `control` file, and then package the compiled binary with `dpkg` ([see this derivation][13]).
 Let's see what it looks like:
 
-    $ dpkg -I result
-     new Debian package, version 2.0.
-     size 3756 bytes: control archive=280 bytes.
-         233 bytes,     9 lines      control              
-     Package: zicross-demo-c
-     Version: 0.1.0
-     Section: base
-     Priority: optional
-     Architecture: armhf
-     Depends: libcrypt1 (>= 1:4.4.18), libsdl2-2.0-0 (>= 2.0.0)
-     Maintainer: Felix Krause <contact@flyx.org>
-     Description: Zicross Demo App (in C)
+{% highlight plain %}
+$ dpkg -I result
+ new Debian package, version 2.0.
+ size 3756 bytes: control archive=280 bytes.
+     233 bytes,     9 lines      control              
+ Package: zicross-demo-c
+ Version: 0.1.0
+ Section: base
+ Priority: optional
+ Architecture: armhf
+ Depends: libcrypt1 (>= 1:4.4.18), libsdl2-2.0-0 (>= 2.0.0)
+ Maintainer: Felix Krause <contact@flyx.org>
+ Description: Zicross Demo App (in C)
+ {% endhighlight %}
 
 Note how `libcrypt` was not in the dependencies specified by our build script, we only added this for cross-compiling.
 The dependencies have minimal versions specified as given in `flake.nix`.
@@ -184,7 +190,9 @@ As long as there are no API breaks, this package works with any newer version of
 
 You can now copy this `.deb` package to a Debian on a Raspberry Pi and install it via
 
-    $ sudo apt install ./zicross-demo-c-0.1.0.deb
+{% highlight plain %}
+$ sudo apt install ./zicross-demo-c-0.1.0.deb
+{% endhighlight %}
 
 Currently, Zicross does not implement signing of the package so it is only useful locally.
 

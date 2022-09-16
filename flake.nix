@@ -45,18 +45,24 @@
     };
     packages.articleSources = pkgs.buildEnv {
       name = "zicross-article-sources";
-      paths = [ ./article (nix-filter.lib.filter {
-        root = ./.;
-        include = [ ./examples ];
-        exclude = [
-          (nix-filter.lib.matchExt "lock")
-          (nix-filter.lib.matchExt "sum")
-          (nix-filter.lib.matchExt "md")
-          (nix-filter.lib.matchExt "zig")
-          (nix-filter.lib.matchExt "go")
-          (nix-filter.lib.matchExt "c")
-        ];
-      })];
+      paths = [
+        (nix-filter.lib.filter {
+          root = ./article;
+          exclude = [ ./article/testing ];
+        })
+        (nix-filter.lib.filter {
+          root = ./.;
+          include = [ ./examples ];
+          exclude = [
+            (nix-filter.lib.matchExt "lock")
+            (nix-filter.lib.matchExt "sum")
+            (nix-filter.lib.matchExt "md")
+            (nix-filter.lib.matchExt "zig")
+            (nix-filter.lib.matchExt "go")
+            (nix-filter.lib.matchExt "c")
+          ];
+        })
+      ];
     };
   }));
 }
