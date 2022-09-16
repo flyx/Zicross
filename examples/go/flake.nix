@@ -32,9 +32,9 @@
         inherit pname version;
         src = ./.;
         subPackages = [ "zicross_demo_go" ];
-        vendorSha256 = "U+X2hrm1J5/Oeum9wcja/hZOKzVPWHMkeJVikOjq9IY=";
+        vendorSha256 = "5cfp25rEhmnLI/pQXE1+e6kjiYnb7T3nEuoLw2AfEoM=";
         nativeBuildInputs = [ pkgs.pkg-config ];
-        buildInputs = with pkgs; [ mySDL2 SDL2_ttf SDL2_image ];
+        buildInputs = with pkgs; [ mySDL2 ];
         targetSharePath="${placeholder "out"}/share";
         
         # workaround for buildGoModule not being able to take sources in a `go`
@@ -89,14 +89,10 @@
           libx11-dev = {
             path = "debian/pool/main/libx/libx11/libx11-dev_1.7.2-1_armhf.deb";
             sha256 = "0n0r21z7lp582pk51fp8dwaymz3jz54nb26xmfwls7q4xbj5f7wz";
-            packageName = "libx11-dev";
-            minVersion = "2:1.7.0";
           };
           x11proto-dev = {
             path = "debian/pool/main/x/xorgproto/x11proto-dev_2020.1-1_all.deb";
             sha256 = "1xb5ll2fg3as128m5vi6w5kwbcyc732hljy16i66dllsgmc8smnm";
-            packageName = "x11proto-dev";
-            minVersion = "2020.1";
           };
         };
       };
@@ -105,8 +101,6 @@
         GOARCH = "amd64";
         postConfigure = origAttrs.postConfigure + ''
           export CGO_LDFLAGS="$CGO_LDFLAGS $(pkg-config --libs sdl2)"
-          echo "generated:"
-          cat zicross_demo_go/generated.go
         '';
       })) {
         targetSystem = "x86_64-windows";
@@ -115,7 +109,7 @@
             tail = "SDL2-2.0.22-1-any.pkg.tar.zst";
             sha256 = "13v4wavbxzdnmg6b7qrv7031dmdbd1rn6wnsk9yn4kgs110gkk90";
             postPatch = ''
-              ${pkgs.gnused}/bin/sed -i "s/-lSDL2main//g" upstream/clang64/lib/pkgconfig/sdl2.pc
+              ${pkgs.gnused}/bin/sed -i "s:-lSDL2main:$out/clang64/lib/libSDL2main.a:g" upstream/clang64/lib/pkgconfig/sdl2.pc
             '';
           };
           iconv = {

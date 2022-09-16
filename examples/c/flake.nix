@@ -32,10 +32,8 @@
           EOF
         '';
         preBuild = ''
-          echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
           export CFLAGS="$CFLAGS $(pkg-config --cflags sdl2)"
           export LDFLAGS="$LDFLAGS $(pkg-config --libs sdl2)"
-          echo CFLAGS=$CFLAGS
         '';
         preInstall = ''
           mkdir -p $out/share
