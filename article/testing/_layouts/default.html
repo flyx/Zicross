@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title }}</title>
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="stylesheet" href="/css/syntax.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" />
+  </head>
+  <body>
+    <nav>
+      <a href="#" class="header">
+        <span class="title">{{ site.title }}</span>
+        <i class="fas fa-caret-down"></i>
+      </a>
+      <ul>
+        {% assign pages = site.pages | where:"kind","main" | sort:"weight" %}
+        {% for p in pages %}
+        <li{% if p.url == page.url %} class="active"{% endif %}>
+          <a href="{{ p.url }}">{{ p.title_short }}</a>
+        </li>
+        {% endfor %}
+        <li class="heading">Articles</li>
+        {% assign articles = site.pages | where:"kind","article" | sort:"weight" %}
+        {% for a in articles %}
+        {% if a.part %}
+          {% if a.title == page.title %}
+            <li class="child{% if a.url == page.url %} active{% endif %}">
+              <a href="{{ a.url }}" class="part">Part {{ a.part }}</a>
+            </li>
+          {% endif %}
+        {% else %}
+          <li class="child{% if a.url == page.url %} active{% endif %}">
+            <a href="{{ a.url }}">{{ a.title_short }}</a>  
+          </li>
+        {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <main>
+      <article>
+        <header>
+          <div>
+            {% if page.parttitle %}
+              <span class="parent">{{ page.title }}</span>
+              <h1>Part {{ page.part }}: {{ page.parttitle }}</h1>
+            {% else %}
+              <h1>{{ page.title }}</h1>
+            {% endif %}
+          </div>
+          <span class="date">{{ page.date }}</span>
+        </header>
+        
+        {%- if page.updated %}
+        <p class="updated">Last updated {{ page.updated }}, see <a href="#changelog">Changelog</a></p>
+        {%- endif %}
+        
+        {% include navigator.liquid %}
+  
+        {{ content }}
+        
+        {% include navigator.liquid %}
+      </article>
+    </main>
+  </body>
+</html>

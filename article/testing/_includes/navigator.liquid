@@ -1,0 +1,27 @@
+{% if page.part %}
+  {% for other in articles %}
+    {% if other.has_parts and other.title == page.title %}
+      <div class="navigator">
+        {% assign prevPart = page.part | plus: -1 %}
+        <a class="prev" href="{{other.permalink}}{% if page.part > 1 %}part{{prevPart}}/{% endif %}"><i class="fas fa-chevron-left"></i> Previous</a>
+        {% assign nextPart = page.part | plus: 1 %}
+        {% for other2 in articles %}
+          {% if other2.title == page.title and other2.part == nextPart %}
+            <a class="next" href="{{other.permalink}}part{{nextPart}}/">Next <i class="fas fa-chevron-right"></i></a>
+            {% break %}
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% else %}
+  {% for other in articles %}
+    {% if other.part and other.title == page.title %}
+      <div class="navigator">
+        <a class="next" href="{{page.permalink}}part1/">Next <i class="fas fa-chevron-right"></i></a>
+      </div>
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
