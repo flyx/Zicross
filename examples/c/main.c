@@ -53,7 +53,7 @@ void loadData() {
   fclose(file);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   loadData();
   
   try(SDL_Init, SDL_INIT_VIDEO|SDL_INIT_EVENTS|SDL_INIT_AUDIO);
@@ -119,4 +119,5 @@ int main() {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
+  return 0;
 }

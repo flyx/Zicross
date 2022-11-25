@@ -6,9 +6,9 @@ var data: [20][40]bool = undefined;
 
 fn loadData() !void {
   const file = if (std.fs.path.isAbsolute(resources.data)) (
-    try std.fs.openFileAbsolute(resources.data, .{.read = true, .write = false})
+    try std.fs.openFileAbsolute(resources.data, .{.mode = .read_only})
   ) else (
-    try std.fs.cwd().openFile(resources.data, .{.read = true, .write = false})
+    try std.fs.cwd().openFile(resources.data, .{.mode = .read_only})
   );
   defer file.close();
   for (data) |*row| {
@@ -34,7 +34,7 @@ pub fn main() !void {
       "Zicross Demo",
       .{ .centered = {} }, .{ .centered = {} },
       640, 480,
-      .{ .shown = true },
+      .{ .vis = .shown },
   );
   defer window.destroy();
   

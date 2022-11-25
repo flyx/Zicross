@@ -8,47 +8,59 @@ final: prev: {
     , version
     # where to find *.pc files in the given debian packages.
     , pkgConfigPrefix ? "/usr/lib/pkgconfig"
-    # default include directories inside dependencies.
-    , includeDirs ? [ "/usr/include" ]
+      # default include directories inside dependencies.
+    , includeDirs ? [
+      "/usr/include"
+    ]
     # set of debian packages to download, patch and put into buildInputs
-    , deps ? {}
-    # name of the target system (in NixOS terminology)
-    , targetSystem}:
-    
+    , deps ? { }
+      # name of the target system (in NixOS terminology)
+    , targetSystem }:
+
     let
       patch-pkg-config = import ./patch-pkg-config.nix;
-      fetchDeb = {path, sha256, ...}: builtins.fetchurl {
-        url = "http://deb.debian.org/${path}";
-        inherit sha256;
-      };
-      pkgFromDebs = name: input: let
-        hasDev = builtins.hasAttr "dev" input;
-        srcs = [ (fetchDeb input)] ++
-          (if hasDev then [ (fetchDeb input.dev) ] else []);
-      in prev.stdenvNoCC.mkDerivation {
-        name = "dpkg-${name}";
-        inherit srcs;
-        phases = ["unpackPhase" "patchPhase" "installPhase"];
-        unpackPhase = ''
-          mkdir -p upstream
-          ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 0} upstream
-        '' + (if hasDev then ''
-          ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 1} upstream
-        '' else "");
-        patchPhase = ''
-          shopt -s globstar
-          for pcFile in upstream/**/pkgconfig/*.pc; do
-            ${patch-pkg-config prev} $pcFile $out
-          done
-        '';
-        installPhase = ''
-          mkdir -p $out/
-          cp -rt $out upstream/*
-        '';
-      };
-      debianArch = {
-        "armv7l-hf-multiplatform" = "armhf";
-      };
+      fetchDeb = { path, sha256, ... }:
+        builtins.fetchurl {
+          url = "http://deb.debian.org/${path}";
+          inherit sha256;
+        };
+      pkgFromDebs = name: input:
+        let
+          hasDev = builtins.hasAttr "dev" input;
+          srcs = [ (fetchDeb input) ]
+            ++ (if hasDev then [ (fetchDeb input.dev) ] else [ ]);
+          basePkg = prev.stdenvNoCC.mkDerivation {
+            name = "dpkg-${name}";
+            inherit srcs;
+            phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+            unpackPhase = ''
+              mkdir -p upstream
+              ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 0} upstream
+            '' + (if hasDev then ''
+              ${prev.dpkg}/bin/dpkg-deb -x ${builtins.elemAt srcs 1} upstream
+            '' else
+              "");
+            patchPhase = ''
+              runHook prePatch
+              shopt -s globstar
+              for pcFile in upstream/**/pkgconfig/*.pc; do
+                ${patch-pkg-config prev} $pcFile $out
+              done
+              rm -f upstream/**/*.a
+              runHook postPatch
+            '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p $out/
+              cp -rt $out upstream/*
+              runHook postInstall
+            '';
+          };
+        in if builtins.hasAttr "overrideAttrs" input then
+          basePkg.overrideAttrs input.overrideAttrs
+        else
+          basePkg;
+      debianArch = { "armv7l-hf-multiplatform" = "armhf"; };
     in pkg.overrideAttrs (origAttrs: {
       inherit pkgConfigPrefix includeDirs;
       ZIG_TARGET = prev.zig.systemName.${targetSystem};
@@ -57,10 +69,9 @@ final: prev: {
         Package = name;
         Version = version;
         Architecture = debianArch.${targetSystem};
-        Depends = prev.lib.concatStringsSep ", " (
-          prev.lib.mapAttrsToList (key: value: "${value.packageName} (>= ${value.minVersion})")
-                                  (prev.lib.filterAttrs (_: builtins.hasAttr "packageName") deps)
-        );
+        Depends = prev.lib.concatStringsSep ", " (prev.lib.mapAttrsToList
+          (key: value: "${value.packageName} (>= ${value.minVersion})")
+          (prev.lib.filterAttrs (_: builtins.hasAttr "packageName") deps));
       };
       targetSharePath = "/usr/share/${name}";
       postConfigure = ''
@@ -72,7 +83,7 @@ final: prev: {
         done
       '' + (origAttrs.postConfigure or "");
     });
-  packageForDebian = 
+  packageForDebian =
     # the original package to override
     pkg:
     # debian package's name
@@ -81,13 +92,15 @@ final: prev: {
     , version
     # where to find *.pc files in the given debian packages.
     , pkgConfigPrefix ? "/usr/lib/pkgconfig"
-    # default include directories inside dependencies.
-    , includeDirs ? [ "/usr/include" ]
+      # default include directories inside dependencies.
+    , includeDirs ? [
+      "/usr/include"
+    ]
     # set of debian packages to download, patch and put into buildInputs
-    , deps ? {}
-    # name of the target system (in NixOS terminology)
-    , targetSystem}@args':
-    
+    , deps ? { }
+      # name of the target system (in NixOS terminology)
+    , targetSystem }@args':
+
     let
       name = src.deb.Package;
       version = src.deb.Version;

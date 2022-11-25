@@ -1,11 +1,12 @@
 {
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/22.05;
-    utils.url = github:numtide/flake-utils;
-    nix-filter.url = github:numtide/nix-filter;
+    nixpkgs.url = "github:nixos/nixpkgs/22.05";
+    utils.url = "github:numtide/flake-utils";
+    nix-filter.url = "github:numtide/nix-filter";
+    zig-binaries.url = "github:mitchellh/zig-overlay";
   };
-  outputs = {self, nixpkgs, utils, nix-filter}: {
-    overlays.zig     = import ./zig-overlay.nix { };
+  outputs = {self, nixpkgs, utils, nix-filter, zig-binaries}: {
+    overlays.zig     = import ./zig-overlay.nix { inherit zig-binaries; };
     overlays.go      = import ./go-overlay.nix;
     overlays.debian  = import ./debian-overlay.nix;
     overlays.windows = import ./windows-overlay.nix;
