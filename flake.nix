@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/22.05";
+    nixpkgs.url = "github:nixos/nixpkgs/24.05";
     utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
     zig-binaries.url = "github:mitchellh/zig-overlay";

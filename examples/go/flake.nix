@@ -1,7 +1,7 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross;
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
+    zicross.url = github:flyx/Zicross/bump;
+    nixpkgs.url = github:NixOS/nixpkgs/nixos-24.05;
     utils.url   = github:numtide/flake-utils;
   };
   outputs = {self, zicross, nixpkgs, utils}:
@@ -32,7 +32,7 @@
         inherit pname version;
         src = ./.;
         subPackages = [ "zicross_demo_go" ];
-        vendorSha256 = "5cfp25rEhmnLI/pQXE1+e6kjiYnb7T3nEuoLw2AfEoM=";
+        vendorHash = "sha256-5cfp25rEhmnLI/pQXE1+e6kjiYnb7T3nEuoLw2AfEoM=";
         nativeBuildInputs = [ pkgs.pkg-config ];
         buildInputs = with pkgs; [ mySDL2 ];
         targetSharePath="${placeholder "out"}/share";

@@ -5,10 +5,10 @@ final: prev: {
     # target architecture, or null for native
     GOARCH ? null,
     ...
-  }@args': ((prev.buildGo119Module.override {
-    go = prev.go_1_19 // {
-      GOOS = if GOOS == null then prev.go_1_19.GOOS else GOOS;
-      GOARCH = if GOARCH == null then prev.go_1_19.GOARCH else GOARCH;
+  }@args': ((prev.buildGo123Module.override {
+    go = prev.go_1_23 // {
+      GOOS = if GOOS == null then prev.go_1_23.GOOS else GOOS;
+      GOARCH = if GOARCH == null then prev.go_1_23.GOARCH else GOARCH;
       CGO_ENABLED = true;
     };
   }) args').overrideAttrs (origAttrs: {

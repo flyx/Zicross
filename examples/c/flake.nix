@@ -1,7 +1,7 @@
 {
   inputs = {
-    zicross.url = github:flyx/Zicross;
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-22.05;
+    zicross.url = github:flyx/Zicross/bump;
+    nixpkgs.url = github:NixOS/nixpkgs/nixos-24.05;
     utils.url   = github:numtide/flake-utils;
   };
   outputs = {self, zicross, nixpkgs, utils}:

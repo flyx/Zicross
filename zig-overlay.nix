@@ -1,9 +1,8 @@
 # provided by the flake
 {
 # version. can be a release version or a date.
-version ? "0.10.0",
-# whether the missing ARM header should be downloaded and added to libc headers
-patchArmHeader ? true, zig-binaries }:
+version ? "0.13.0",
+zig-binaries }:
 
 final: prev:
 let
@@ -28,26 +27,16 @@ let
           ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -F$NIX_COREFOUNDATION_RPATH"
           ADDITIONAL_FLAGS="$ADDITIONAL_FLAGS -I${macos_sysroot}/usr/include -L${macos_sysroot}/usr/lib -DTARGET_OS_OSX=1 -DTARGET_OS_IPHONE=0"
         fi
-        export ZIG_LOCAL_CACHE_DIR=$TMPDIR/zig-cache
-        export ZIG_GLOBAL_CACHE_DIR=$ZIG_LOCAL_CACHE_DIR
+        export ZIG_LOCAL_CACHE_DIR="$TMPDIR/zig-cache"
+        export ZIG_GLOBAL_CACHE_DIR="$ZIG_LOCAL_CACHE_DIR"
+        pwd >&2
+        ls -alh "$TMPDIR/zig-cache" >&2
+        rm -rf "$ZIG_LOCAL_CACHE_DIR"
         ${
           builtins.placeholder "out"
         }/bin/zig cc -gline-tables-only $ADDITIONAL_FLAGS $@
       '';
-      installPhase = let
-        armFeatures = builtins.fetchurl {
-          url = "https://sourceware.org/git/?p=glibc.git;"
-            + "a=blob_plain;f=sysdeps/arm/arm-features.h;"
-            + "h=80a1e2272b5b4ee0976a410317341b5ee601b794;"
-            + "hb=0281c7a7ec8f3f46d8e6f5f3d7fca548946dbfce";
-          name = "glibc-2.35_arm-features.h";
-          sha256 = "1g4yb51srrfbd4289yj0vrpzzp2rlxllxgz8q4a5zw1n654wzs5a";
-        };
-      in old.installPhase + ''
-        ${if patchArmHeader then ''
-          cp ${armFeatures} $out/lib/libc/glibc/sysdeps/arm/arm-features.h
-        '' else
-          ""}
+      installPhase = old.installPhase + ''
         printenv cc_impl >$out/bin/cc
         chmod a+x $out/bin/cc
       '';
